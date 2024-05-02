@@ -1,74 +1,4 @@
-// import { useState, useEffect } from "react";
-// import {
-//   Banner,
-//   useApi,
-//   useTranslate,
-//   reactExtension,
-//   useCartLines,
-//   Button,
-//   useCartLineTarget,
-// } from "@shopify/ui-extensions-react/checkout";
-
-// const PRODUCT_QUERY = `query ($first: Int!) {
-//   products(first: $first) {
-//     nodes {
-//       id
-//       title
-//       variants(first: 1) {
-//         nodes {
-//           id
-//           title
-//           metafield(key: "bundle_parent", namespace: "custom") {
-//             value
-//           }
-//         }
-//       }
-//     }
-//   }
-// }`;
-
-// export default reactExtension(
-//   "purchase.checkout.cart-line-item.render-after",
-//   async (api) => {
-//     const mapping = {};
-//     try {
-//       const results = await api.query(PRODUCT_QUERY, {
-//         variables: { first: 5 },
-//       });
-
-//       if (results.data.products.nodes.length) {
-//         results.data.products.nodes.forEach(({ variants }) => {
-//           if (variants.nodes[0].metafield?.value) {
-//             mapping[variants.nodes[0].id] = variants.nodes[0].metafield?.value;
-//           }
-//         });
-//       }
-//     } catch (e) {
-//       console.error(e);
-//     }
-
-//     return <Extension mapping={mapping} />;
-//   },
-// );
-
-// interface Props {
-//   mapping: Record<string, string>;
-// }
-
-// function Extension({ mapping }: Props) {
-//   const line = useCartLineTarget();
-
-//   if (line.lineComponents.length > 0) {
-//     return;
-//   }
-
-//   const maybeBundleUpsellId = mapping[line.merchandise.id];
-//   console.log(maybeBundleUpsellId);
-
-//   return <Button>Supersize Me</Button>;
-// }
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   reactExtension,
   Divider,
@@ -79,23 +9,27 @@ import {
   InlineLayout,
   BlockStack,
   Text,
-  SkeletonText,
-  SkeletonImage,
   useCartLines,
   useApplyCartLinesChange,
   useApi,
+  useTotalAmount,
 } from "@shopify/ui-extensions-react/checkout";
 // Set up the entry point for the extension
 export default reactExtension(
   "purchase.checkout.cart-line-list.render-after",
   async (api) => {
     const productId = api.lines.current[0]?.merchandise.product.id;
-    const { products, productTitle } = await fetchProducts(productId);
+    const recommendation = await fetchFirstRecommendation(productId);
 
-    return <App products={products} productTitle={productTitle} />;
+    return <App recommendation={recommendation} />;
 
-    async function fetchProducts(productId: string) {
+    async function fetchFirstRecommendation(productId: string) {
+      if (!productId) {
+        return;
+      }
+
       try {
+        // TODO: hookup types
         const results = await api.query(
           `query productRecommendations($productId: ID!) {
             productRecommendations(productId: $productId) {
@@ -103,10 +37,10 @@ export default reactExtension(
               variants(first: 1){
                 nodes{
                   id,
-                  price{
+                  price {
                     amount
                   },
-                  image{
+                  image {
                     url
                   },
                 }
@@ -118,11 +52,15 @@ export default reactExtension(
           },
         );
 
-        console.log(results);
+        if (!results.data) {
+          return;
+        }
+
+        const [{ variants, title }] = results.data.productRecommendations;
 
         return {
-          products: results.data.productRecommendations[0].variants.nodes[0],
-          productTitle: results.data.productRecommendations[0].title,
+          productTitle: title,
+          productVariant: variants.nodes[0],
         };
       } catch (error) {
         console.error(error);
@@ -131,14 +69,18 @@ export default reactExtension(
   },
 );
 
-function App({ products, productTitle }) {
+interface Props {
+  recommendation?: { productTitle: string; productVariant: object };
+}
+
+function App({ recommendation }: Props) {
   const { i18n } = useApi();
   const applyCartLinesChange = useApplyCartLinesChange();
-  const [loading] = useState(false);
   const [adding, setAdding] = useState(false);
   const [showError, setShowError] = useState(false);
+  const cost = useTotalAmount();
   const lines = useCartLines();
-  const sourceBundleCartLine = lines[0].id;
+  console.log(lines);
 
   useEffect(() => {
     if (showError) {
@@ -149,87 +91,76 @@ function App({ products, productTitle }) {
 
   async function handleAddToCart(variantId) {
     setAdding(true);
-    var result = await applyCartLinesChange({
+
+    let result = await applyCartLinesChange({
       type: "updateCartLine",
-      id: sourceBundleCartLine,
+      id: lines[0].id,
       attributes: [
         {
-          key: "_bundle_discount",
-          value: "source",
+          key: "_original_cost",
+          value: String(lines[0].cost.totalAmount.amount),
         },
       ],
     });
+
     result = await applyCartLinesChange({
       type: "addCartLine",
       merchandiseId: variantId,
       quantity: 1,
       attributes: [
         {
-          key: "_bundle_discount",
-          value: "apply",
+          key: "_original_cost",
+          value: recommendation.productVariant.price.amount,
         },
       ],
     });
+
     setAdding(false);
+
     if (result.type === "error") {
       setShowError(true);
       console.error(result.message);
     }
   }
 
-  if (
-    lines.find(
-      (line) => line.attributes && line.attributes[0]?.value === "source",
-    )
-  ) {
+  if (!recommendation) {
     return null;
   }
 
-  if (loading) {
-    return <LoadingSkeleton />;
-  }
+  const hasBundles = lines.some((line) => line.lineComponents.length > 1);
+  if (hasBundles) {
+    const originalPrice = lines.reduce((total, line) => {
+      return (
+        total +
+        line.lineComponents.reduce((lineTotal, lineComp) => {
+          const attr = lineComp.attributes.find(
+            (attr) => attr.key === "_original_cost",
+          );
+          if (!attr) return lineTotal;
+          return lineTotal + Number(attr.value);
+        }, 0)
+      );
+    }, 0);
 
-  if (!loading && !products) {
-    return null;
-  }
-  if (!products) {
-    return null;
+    // TODO: format to locality, format with currency
+    const num = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(originalPrice - cost.amount);
+    console.log(cost.amount, originalPrice);
+
+    return <Heading level={2}>you're saving {String(num)}!!!</Heading>;
   }
 
   return (
     <ProductOffer
-      product={products}
-      title={productTitle}
+      product={recommendation.productVariant}
+      title={recommendation.productTitle}
       i18n={i18n}
       adding={adding}
       handleAddToCart={handleAddToCart}
       showError={showError}
     />
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <BlockStack spacing="loose">
-      <Divider />
-      <Heading level={2}>You might also like</Heading>
-      <BlockStack spacing="loose">
-        <InlineLayout
-          spacing="base"
-          columns={[64, "fill", "auto"]}
-          blockAlignment="center"
-        >
-          <SkeletonImage aspectRatio={1} />
-          <BlockStack spacing="none">
-            <SkeletonText inlineSize="large" />
-            <SkeletonText inlineSize="small" />
-          </BlockStack>
-          <Button kind="secondary" disabled={true}>
-            Add
-          </Button>
-        </InlineLayout>
-      </BlockStack>
-    </BlockStack>
   );
 }
 
@@ -260,11 +191,10 @@ function ProductOffer({
             borderWidth="base"
             borderRadius="loose"
             source={imageUrl}
-            description={title}
             aspectRatio={1}
           />
           <BlockStack spacing="none">
-            <Text size="medium" emphasis="strong">
+            <Text size="medium" emphasis="bold">
               {title}
             </Text>
             <Text appearance="subdued">{renderPrice}</Text>

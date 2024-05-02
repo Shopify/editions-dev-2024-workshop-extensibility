@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import { json } from "@remix-run/node";
+import type { LoaderFunction, ActionFunction } from "@remix-run/node";
 import { useActionData, useNavigation, useSubmit } from "@remix-run/react";
 
 import { authenticate } from "../shopify.server";
@@ -13,20 +13,19 @@ import {
   Page,
   Text,
   BlockStack,
-  Button
+  Button,
 } from "@shopify/polaris";
 
-export const loader = async ({ request }) => {
-  const { admin } = await authenticate.admin(request);
-  
+export const loader: LoaderFunction = async ({ request }) => {
+  await authenticate.admin(request);
   return null;
 };
 
-export const action = async ({ request }) => {
+export const action: ActionFunction = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
 
   // First return says if the extension exists and metafield is set, just print the data
-  const doesFunctionExistResponse = await admin.graphql (
+  const doesFunctionExistResponse = await admin.graphql(
     `#graphql
       query {
         cartTransforms(first: 5) {
@@ -39,18 +38,18 @@ export const action = async ({ request }) => {
             }
           }
         }
-      }`
+      }`,
   );
   const functionExistJson = await doesFunctionExistResponse.json();
 
   if (functionExistJson.data.cartTransforms?.nodes[0]?.metafield != null) {
     return json({
-      functionDetails: functionExistJson.data.cartTransforms.nodes[0]
-    }); 
+      functionDetails: functionExistJson.data.cartTransforms.nodes[0],
+    });
   }
 
   // Second return says if the extension exists but metafield is not set, add the metafield then print the data
-  if (functionExistJson.data.cartTransforms?.nodes[0]?.metafield === null){
+  if (functionExistJson.data.cartTransforms?.nodes[0]?.metafield === null) {
     const metafieldSetResponse = await admin.graphql(
       `#graphql
       mutation MetafieldsSet($metafields: [MetafieldsSetInput!]!) {
@@ -71,25 +70,27 @@ export const action = async ({ request }) => {
       }`,
       {
         variables: {
-          "metafields": [
+          metafields: [
             {
-              "key": "bundle_parent",
-              "namespace": "custom",
-              "ownerId": functionExistJson.data.cartTransforms.nodes[0].id,
-              "type": "boolean",
-              "value": "true"
-            }
-          ]
+              key: "bundle_parent",
+              namespace: "custom",
+              ownerId: functionExistJson.data.cartTransforms.nodes[0].id,
+              type: "boolean",
+              value: "true",
+            },
+          ],
         },
       },
     );
+
     const metafieldJson = await metafieldSetResponse.json();
+
     return json({
       functionDetails: functionExistJson.data.cartTransforms.nodes[0],
-      newMetafield: metafieldJson.data
+      newMetafield: metafieldJson.data,
     });
   }
-  
+
   // Last return says if the extension doesn't exist, create it, then set metafield, then return both
   const response = await admin.graphql(
     `#graphql
@@ -104,7 +105,7 @@ export const action = async ({ request }) => {
             id
           }
         }
-      }`
+      }`,
   );
   const functionJson = await response.json();
   const functionId = functionJson.data.shopifyFunctions.nodes[0].id;
@@ -127,9 +128,9 @@ export const action = async ({ request }) => {
     }`,
     {
       variables: {
-          functionId: functionId
-      }
-    }
+        functionId: functionId,
+      },
+    },
   );
   const functionCreateJson = await functionCreateResponse.json();
   console.log(functionCreateJson.data.cartTransformCreate);
@@ -154,15 +155,16 @@ export const action = async ({ request }) => {
     }`,
     {
       variables: {
-        "metafields": [
+        metafields: [
           {
-            "key": "bundle_parent",
-            "namespace": "custom",
-            "ownerId": functionCreateJson.data.cartTransformCreate.cartTransform.id,
-            "type": "boolean",
-            "value": "true"
-          }
-        ]
+            key: "bundle_parent",
+            namespace: "custom",
+            ownerId:
+              functionCreateJson.data.cartTransformCreate.cartTransform.id,
+            type: "boolean",
+            value: "true",
+          },
+        ],
       },
     },
   );
@@ -170,7 +172,7 @@ export const action = async ({ request }) => {
   console.log(metafieldJson.data);
   return json({
     newFunction: functionCreateJson.data.cartTransformCreate,
-    newMetafield: metafieldJson.data
+    newMetafield: metafieldJson.data,
   });
 };
 
@@ -181,6 +183,7 @@ export default function FunctionManagement() {
   const isLoading =
     ["loading", "submitting"].includes(nav.state) && nav.formMethod === "POST";
   const getFunctionId = () => submit({}, { method: "POST" });
+
   return (
     <Page>
       <ui-title-bar title="Function Management" />
@@ -195,93 +198,90 @@ export default function FunctionManagement() {
                 <>
                   <Text>Function already exists, printing function data:</Text>
                   <Box
-                  padding="400"
-                  background="bg-surface-active"
-                  borderWidth="025"
-                  borderRadius="200"
-                  borderColor="border"
-                  overflowX="scroll"
-                >
-                  <pre style={{ margin: 0 }}>
-                    <code>
-                      {JSON.stringify(actionData.functionDetails, null, 2)}
-                    </code>
-                  </pre>
-                </Box>
-              </>
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                    overflowX="scroll"
+                  >
+                    <pre style={{ margin: 0 }}>
+                      <code>
+                        {JSON.stringify(actionData.functionDetails, null, 2)}
+                      </code>
+                    </pre>
+                  </Box>
+                </>
               )}
               {actionData?.functionDetails && actionData?.newMetafield && (
                 <>
                   <Text>Function already exists, new metafield added:</Text>
                   <Box
-                  padding="400"
-                  background="bg-surface-active"
-                  borderWidth="025"
-                  borderRadius="200"
-                  borderColor="border"
-                  overflowX="scroll"
-                >
-                  <pre style={{ margin: 0 }}>
-                    <code>
-                      {JSON.stringify(actionData.functionDetails, null, 2)}
-                    </code>
-                  </pre>
-                </Box>
-                <Box
-                  padding="400"
-                  background="bg-surface-active"
-                  borderWidth="025"
-                  borderRadius="200"
-                  borderColor="border"
-                  overflowX="scroll"
-                >
-                  <pre style={{ margin: 0 }}>
-                    <code>
-                      {JSON.stringify(actionData.newMetafield, null, 2)}
-                    </code>
-                  </pre>
-                </Box>
-              </>
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                    overflowX="scroll"
+                  >
+                    <pre style={{ margin: 0 }}>
+                      <code>
+                        {JSON.stringify(actionData.functionDetails, null, 2)}
+                      </code>
+                    </pre>
+                  </Box>
+                  <Box
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                    overflowX="scroll"
+                  >
+                    <pre style={{ margin: 0 }}>
+                      <code>
+                        {JSON.stringify(actionData.newMetafield, null, 2)}
+                      </code>
+                    </pre>
+                  </Box>
+                </>
               )}
               {actionData?.newFunction && actionData?.newMetafield && (
                 <>
-                  <Text>New extension created, printing function extension and new metafield</Text>
+                  <Text>
+                    New extension created, printing function extension and new
+                    metafield
+                  </Text>
                   <Box
-                  padding="400"
-                  background="bg-surface-active"
-                  borderWidth="025"
-                  borderRadius="200"
-                  borderColor="border"
-                  overflowX="scroll"
-                >
-                  <pre style={{ margin: 0 }}>
-                    <code>
-                      {JSON.stringify(actionData.newFunction, null, 2)}
-                    </code>
-                  </pre>
-                </Box>
-                <Box
-                padding="400"
-                background="bg-surface-active"
-                borderWidth="025"
-                borderRadius="200"
-                borderColor="border"
-                overflowX="scroll"
-              >
-                <pre style={{ margin: 0 }}>
-                  <code>
-                  {JSON.stringify(actionData.newMetafield, null, 2)}
-                  </code>
-                </pre>
-              </Box>
-            </>
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                    overflowX="scroll"
+                  >
+                    <pre style={{ margin: 0 }}>
+                      <code>
+                        {JSON.stringify(actionData.newFunction, null, 2)}
+                      </code>
+                    </pre>
+                  </Box>
+                  <Box
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                    overflowX="scroll"
+                  >
+                    <pre style={{ margin: 0 }}>
+                      <code>
+                        {JSON.stringify(actionData.newMetafield, null, 2)}
+                      </code>
+                    </pre>
+                  </Box>
+                </>
               )}
-              <Text as="p" variant="bodyMd">
-                To create your own page and have it show up in the app
-                navigation, add a page inside <Code>app/routes</Code>, and a
-                link to it in the <Code>&lt;ui-nav-menu&gt;</Code> component
-                found in <Code>app/routes/app.jsx</Code>.
-              </Text>
             </BlockStack>
           </Card>
         </Layout.Section>
@@ -294,11 +294,20 @@ export default function FunctionManagement() {
               <List>
                 <List.Item>
                   <Link
-                    url="https://shopify.dev/docs/apps/design-guidelines/navigation#app-nav"
+                    url="https://shopify.dev"
                     target="_blank"
                     removeUnderline
                   >
-                    App nav best practices
+                    add more links here
+                  </Link>
+                </List.Item>
+                <List.Item>
+                  <Link
+                    url="https://shopify.dev"
+                    target="_blank"
+                    removeUnderline
+                  >
+                    add more links here
                   </Link>
                 </List.Item>
               </List>
