@@ -6,17 +6,9 @@ query Input {
       merchandise {
         __typename
         ... on ProductVariant {
+          __typename
           id
           title
-          componentReferences: metafield(
-            namespace: "custom"
-            key: "component_reference"
-          ) {
-            value
-          }
-          bundleReference: metafield(namespace: "custom", key: "bundle_type") {
-            value
-          }
           bundleParent: metafield(key: "bundle_parent", namespace: "custom") {
             value
           }
