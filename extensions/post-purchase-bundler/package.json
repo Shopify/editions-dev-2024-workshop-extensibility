@@ -1,0 +1,22 @@
+{
+  "name": "post-purchase-bundler",
+  "private": true,
+  "version": "1.0.0",
+  "license": "UNLICENSED",
+  "scripts": {
+    "graphql-codegen": "graphql-codegen"
+  },
+  "dependencies": {
+    "@shopify/admin-api-client": "^0.2.9",
+    "@shopify/shopify-api": "^10.0.0",
+    "@shopify/storefront-api-client": "^0.3.4",
+    "@shopify/ui-extensions": "2024.4.x",
+    "@shopify/ui-extensions-react": "2024.4.x",
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@shopify/api-codegen-preset": "^0.0.7",
+    "@types/react": "^18.0.0",
+    "react-reconciler": "0.29.0"
+  }
+}
