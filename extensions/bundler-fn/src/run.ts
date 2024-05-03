@@ -1,62 +1,74 @@
-import type { Input, FunctionRunResult, CartLine } from "../generated/api";
+import type {
+  Input,
+  FunctionRunResult,
+  CartLine,
+  ProductVariant,
+  MergeOperation,
+} from "../generated/api";
 
-const NO_CHANGES = {
-  operations: [],
+const DEFAULT_PERCENTAGE_DECREASE = 15;
+
+export type ProductVariantWithMetafields = ProductVariant & {
+  bundleParent?: {
+    value: string;
+  };
 };
 
-type BundleMapping = Record<
-  string,
-  {
-    parent: string;
-    lines: CartLine[];
-  }
->;
+interface Bundle {
+  [bundleParentId: string]: CartLine[];
+}
 
 export function run(input: Input): FunctionRunResult {
-  const bundleMapping: BundleMapping = {};
+  const mapping = input.cart.lines.reduce<Bundle>(bundler, {});
 
-  input.cart.lines.forEach((line) => {
-    if (!line.merchandise.bundleReference) {
-      return;
-    }
-
-    const bundleType = line.merchandise.bundleReference.value;
-    bundleMapping[bundleType] = bundleMapping[bundleType] || {
-      parent: line.merchandise.bundleParent.value,
-      lines: [],
+  if (Object.values(mapping).some((bundle) => bundle.length <= 1)) {
+    return {
+      operations: [],
     };
-
-    const bundle = bundleMapping[bundleType];
-
-    bundle.lines.push(line);
-  });
-
-  const hasBundleables = Object.values(bundleMapping).some((bundle) => {
-    return bundle.lines.length > 1;
-  });
-
-  if (!hasBundleables) {
-    return NO_CHANGES;
   }
 
-  const operations = Object.entries(bundleMapping).map(([name, bundle]) => {
-    return {
-      merge: {
-        parentVariantId: bundle.lines[0].merchandise.id,
-        price: {
-          percentageDecrease: {
-            value: 10,
+  return {
+    operations: Object.entries(mapping).map(([parentVariantId, bundle]) => {
+      return {
+        merge: {
+          parentVariantId,
+          price: {
+            percentageDecrease: {
+              // TODO: make configurable via metafield
+              value: DEFAULT_PERCENTAGE_DECREASE,
+            },
           },
-        },
-        title: name,
+          cartLines: bundle.map((line) => ({
+            cartLineId: line.id,
+            // TODO: create rules around how this should work in the bundle
+            quantity: 1,
+          })),
+        } as MergeOperation,
+      };
+    }),
+  };
+}
 
-        cartLines: bundle.lines.map((line) => ({
-          cartLineId: line.id,
-          quantity: 1,
-        })),
-      },
+function bundler(prev: Bundle, line: CartLine) {
+  const merchandise = line.merchandise as ProductVariantWithMetafields;
+
+  if (
+    merchandise.__typename !== "ProductVariant" ||
+    !merchandise.bundleParent
+  ) {
+    return prev;
+  }
+
+  const bundleKey = merchandise.bundleParent.value;
+  if (!prev[bundleKey]) {
+    return {
+      ...prev,
+      [bundleKey]: [line],
     };
-  });
+  }
 
-  return { operations };
+  return {
+    ...prev,
+    [bundleKey]: prev[bundleKey].concat(line),
+  };
 }

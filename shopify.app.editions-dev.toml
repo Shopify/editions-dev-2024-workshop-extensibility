@@ -3,7 +3,7 @@
 client_id = "66e979a78212f954f67e0a205dc11ac4"
 name = "editions-dev"
 handle = "editions-dev"
-application_url = "https://democratic-purchase-chance-traveler.trycloudflare.com"
+application_url = "https://pst-federal-drew-resolved.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "unauthenticated_read_product_listings,write_cart_transforms,write_prod
 
 [auth]
 redirect_urls = [
-  "https://democratic-purchase-chance-traveler.trycloudflare.com/auth/callback",
-  "https://democratic-purchase-chance-traveler.trycloudflare.com/auth/shopify/callback",
-  "https://democratic-purchase-chance-traveler.trycloudflare.com/api/auth/callback"
+  "https://pst-federal-drew-resolved.trycloudflare.com/auth/callback",
+  "https://pst-federal-drew-resolved.trycloudflare.com/auth/shopify/callback",
+  "https://pst-federal-drew-resolved.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
