@@ -1,4 +1,8 @@
 import { useEffect, useState } from "react";
+import type {
+  Product,
+  ProductVariant,
+} from "@shopify/hydrogen/storefront-api-types";
 import {
   reactExtension,
   Divider,
@@ -13,8 +17,9 @@ import {
   useApplyCartLinesChange,
   useApi,
   useTotalAmount,
+  useLanguage,
 } from "@shopify/ui-extensions-react/checkout";
-// Set up the entry point for the extension
+
 export default reactExtension(
   "purchase.checkout.cart-line-list.render-after",
   async (api) => {
@@ -29,20 +34,20 @@ export default reactExtension(
       }
 
       try {
-        // TODO: hookup types
-        const results = await api.query(
-          `query productRecommendations($productId: ID!) {
+        const results = await api.query<{ productRecommendations: Product[] }>(
+          `query ProductRecommendations($productId: ID!) {
             productRecommendations(productId: $productId) {
-              title,
-              variants(first: 1){
-                nodes{
-                  id,
+              title
+              variants(first: 1) {
+                nodes {
+                  id
                   price {
                     amount
-                  },
+                    currencyCode
+                  }
                   image {
                     url
-                  },
+                  }
                 }
               }
             }
@@ -70,17 +75,17 @@ export default reactExtension(
 );
 
 interface Props {
-  recommendation?: { productTitle: string; productVariant: object };
+  recommendation?: { productTitle: string; productVariant: ProductVariant };
 }
 
 function App({ recommendation }: Props) {
+  const lang = useLanguage();
   const { i18n } = useApi();
   const applyCartLinesChange = useApplyCartLinesChange();
   const [adding, setAdding] = useState(false);
   const [showError, setShowError] = useState(false);
   const cost = useTotalAmount();
   const lines = useCartLines();
-  console.log(lines);
 
   useEffect(() => {
     if (showError) {
@@ -129,27 +134,29 @@ function App({ recommendation }: Props) {
 
   const hasBundles = lines.some((line) => line.lineComponents.length > 1);
   if (hasBundles) {
-    const originalPrice = lines.reduce((total, line) => {
-      return (
-        total +
-        line.lineComponents.reduce((lineTotal, lineComp) => {
-          const attr = lineComp.attributes.find(
-            (attr) => attr.key === "_original_cost",
-          );
-          if (!attr) return lineTotal;
-          return lineTotal + Number(attr.value);
-        }, 0)
-      );
-    }, 0);
+    let originalPrice = 0;
+    lines.forEach((line) => {
+      line.lineComponents.forEach((lineComponent) => {
+        const attr = lineComponent.attributes.find(
+          (attr) => attr.key === "_original_cost",
+        );
+
+        originalPrice += Number(attr?.value || "0");
+      });
+    });
 
     // TODO: format to locality, format with currency
-    const num = new Intl.NumberFormat("en-US", {
+    const num = new Intl.NumberFormat(lang.isoCode, {
       style: "currency",
-      currency: "USD",
+      currency: cost.currencyCode,
     }).format(originalPrice - cost.amount);
-    console.log(cost.amount, originalPrice);
 
-    return <Heading level={2}>you're saving {String(num)}!!!</Heading>;
+    return (
+      <BlockStack spacing="loose">
+        <Divider />
+        <Heading level={2}>You're saving {String(num)}!</Heading>
+      </BlockStack>
+    );
   }
 
   return (
