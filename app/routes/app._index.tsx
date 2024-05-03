@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useActionData, useNavigation, useSubmit } from "@remix-run/react";
+import { useActionData, useNavigation, useSubmit, useLoaderData } from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -17,16 +17,44 @@ import {
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  const { admin } = await authenticate.admin(request);
+  const response = await admin.graphql(
+    `#graphql
+      query getProductIdFromHandle($handle: String!) {
+          productByHandle(handle: $handle) {
+            id
+            title
+            handle
+            status
 
-  return null;
+            variants(first: 10) {
+              edges {
+                node {
+                  id
+                  price
+                  barcode
+                  createdAt
+                }
+              }
+            }
+        }
+      }`,
+    {
+      variables: {
+          handle: `snowboard-bundle`
+      },
+    },
+  );
+  const responseJson = await response.json();
+
+  return json({
+    product: responseJson!.data!.productByHandle!,
+    variant: responseJson!.data!.productByHandle?.variants,
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
-  const color = ["Red", "Orange", "Yellow", "Green"][
-    Math.floor(Math.random() * 4)
-  ];
   const response = await admin.graphql(
     `#graphql
       mutation populateProduct($input: ProductInput!) {
@@ -41,8 +69,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 node {
                   id
                   price
-                  barcode
-                  createdAt
                 }
               }
             }
@@ -52,7 +78,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     {
       variables: {
         input: {
-          title: `${color} Snowboard`,
+          title: `Snowboard bundle container`,
+          handle: `snowboard-bundle`,
+          claimOwnership: {bundles: true}
         },
       },
     },
@@ -94,6 +122,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function Index() {
   const nav = useNavigation();
   const actionData = useActionData<typeof action>();
+  const loaderData = useLoaderData<typeof loader>();
   const submit = useSubmit();
   const isLoading =
     ["loading", "submitting"].includes(nav.state) && nav.formMethod === "POST";
@@ -108,7 +137,29 @@ export default function Index() {
     }
   }, [productId]);
   const generateProduct = () => submit({}, { replace: true, method: "POST" });
-
+  if (loaderData.product != null){
+    return (
+      <Page>
+        <>
+          <Text as="h2">Here are details of your bundle product:</Text>
+          <Box
+          padding="400"
+          background="bg-surface-active"
+          borderWidth="025"
+          borderRadius="200"
+          borderColor="border"
+          overflowX="scroll"
+          >
+            <pre style={{ margin: 0 }}>
+              <code>
+                {JSON.stringify(loaderData.product, null, 2)}
+              </code>
+            </pre>
+          </Box>
+        </>
+      </Page>
+    );
+  }
   return (
     <Page>
       <ui-title-bar title="Remix app template">

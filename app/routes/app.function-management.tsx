@@ -1,6 +1,6 @@
-import { json } from "@remix-run/node";
-import type { LoaderFunction, ActionFunction } from "@remix-run/node";
-import { useActionData, useNavigation, useSubmit } from "@remix-run/react";
+import { useEffect } from "react";
+import { ActionFunctionArgs, json } from "@remix-run/node";
+import { useActionData, useNavigation, useSubmit, useLoaderData } from "@remix-run/react";
 
 import { authenticate } from "../shopify.server";
 
@@ -16,14 +16,35 @@ import {
   Button,
 } from "@shopify/polaris";
 
-export const loader: LoaderFunction = async ({ request }) => {
-  await authenticate.admin(request);
-  return null;
+export const loader = async ({ request }) => {
+  const { admin } = await authenticate.admin(request);
+  const response = await admin.graphql(
+    `#graphql
+      query getProductIdFromHandle($handle: String!) {
+          productByHandle(handle: $handle) {
+            id
+            variants(first: 10) {
+                nodes{
+                  id
+                }
+            }
+        }
+      }`,
+    {
+      variables: {
+          handle: `snowboard-bundle`
+      },
+    },
+  );
+  const responseJson = await response.json();
+
+  return json({
+    variantID: responseJson!.data!.productByHandle?.variants.nodes[0].id
+  });
 };
 
 export const action: ActionFunction = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
-
   // First return says if the extension exists and metafield is set, just print the data
   const doesFunctionExistResponse = await admin.graphql(
     `#graphql
@@ -48,6 +69,27 @@ export const action: ActionFunction = async ({ request }) => {
     });
   }
 
+  
+  const productIdResponse = await admin.graphql(
+    `#graphql
+      query getProductIdFromHandle($handle: String!) {
+          productByHandle(handle: $handle) {
+            id
+            variants(first: 10) {
+                nodes{
+                  id
+                }
+            }
+        }
+      }`,
+    {
+      variables: {
+          handle: `snowboard-bundle`
+      },
+    },
+  );
+  const productIdResponseJson = await productIdResponse.json();
+  const productVariantId = productIdResponseJson!.data!.productByHandle?.variants.nodes[0].id;
   // Second return says if the extension exists but metafield is not set, add the metafield then print the data
   if (functionExistJson.data.cartTransforms?.nodes[0]?.metafield === null) {
     const metafieldSetResponse = await admin.graphql(
@@ -72,13 +114,13 @@ export const action: ActionFunction = async ({ request }) => {
         variables: {
           metafields: [
             {
-              key: "bundle_parent",
-              namespace: "custom",
-              ownerId: functionExistJson.data.cartTransforms.nodes[0].id,
-              type: "boolean",
-              value: "true",
-            },
-          ],
+              "key": "bundle_parent",
+              "namespace": "custom",
+              "ownerId": functionExistJson.data.cartTransforms.nodes[0].id,
+              "type": "variant_reference",
+              "value": productVariantId
+            }
+          ]
         },
       },
     );
@@ -133,7 +175,6 @@ export const action: ActionFunction = async ({ request }) => {
     },
   );
   const functionCreateJson = await functionCreateResponse.json();
-  console.log(functionCreateJson.data.cartTransformCreate);
 
   const metafieldSetResponse = await admin.graphql(
     `#graphql
@@ -157,19 +198,17 @@ export const action: ActionFunction = async ({ request }) => {
       variables: {
         metafields: [
           {
-            key: "bundle_parent",
-            namespace: "custom",
-            ownerId:
-              functionCreateJson.data.cartTransformCreate.cartTransform.id,
-            type: "boolean",
-            value: "true",
-          },
-        ],
+            "key": "bundle_parent",
+            "namespace": "custom",
+            "ownerId": functionCreateJson.data.cartTransformCreate.cartTransform.id,
+            "type": "variant_reference",
+            "value": productVariantId 
+          }
+        ]
       },
     },
   );
   const metafieldJson = await metafieldSetResponse.json();
-  console.log(metafieldJson.data);
   return json({
     newFunction: functionCreateJson.data.cartTransformCreate,
     newMetafield: metafieldJson.data,
@@ -178,12 +217,24 @@ export const action: ActionFunction = async ({ request }) => {
 
 export default function FunctionManagement() {
   const nav = useNavigation();
-  const actionData = useActionData();
+  const actionData = useActionData<typeof action>();
+  const loaderData = useLoaderData<typeof loader>();
   const submit = useSubmit();
   const isLoading =
     ["loading", "submitting"].includes(nav.state) && nav.formMethod === "POST";
-  const getFunctionId = () => submit({}, { method: "POST" });
-
+  
+  const productVariantId = loaderData?.variantID;
+  const getFunctionId = () => submit({productVariantId: productVariantId}, { method: "POST" });
+  
+  if (!productVariantId){
+    return (
+      <Page>
+        <>
+          <Text as="h2">Please go back and create a bundle product first on the main page</Text>
+        </>
+      </Page>
+    );
+  }
   return (
     <Page>
       <ui-title-bar title="Function Management" />
