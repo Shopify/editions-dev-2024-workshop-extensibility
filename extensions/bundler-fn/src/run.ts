@@ -2,46 +2,45 @@ import type {
   Input,
   FunctionRunResult,
   CartLine,
-  ProductVariant,
   MergeOperation,
 } from "../generated/api";
 
 const DEFAULT_PERCENTAGE_DECREASE = 15;
 
-export type ProductVariantWithMetafields = ProductVariant & {
-  bundleParent?: {
-    value: string;
-  };
-};
-
-interface Bundle {
+interface Bundle2 {
   [bundleParentId: string]: CartLine[];
 }
 
-export function run(input: Input): FunctionRunResult {
-  const mapping = input.cart.lines.reduce<Bundle>(bundler, {});
+interface Bundle {
+  cartLines: Array<CartLine>;
+}
 
-  if (Object.values(mapping).some((bundle) => bundle.length <= 1)) {
+export function run(input: Input): FunctionRunResult {
+  const bundleParentId = input.cartTransform.bundleParent.value;
+  const mapping = input.cart.lines.reduce<Bundle>(bundler, {cartLines: []});
+  if (Object.values(mapping).some((bundle) => bundle?.length <= 1)) {
     return {
       operations: [],
     };
   }
-
+  
+  console.error(JSON.stringify(mapping));
   return {
-    operations: Object.entries(mapping).map(([parentVariantId, bundle]) => {
+    operations: Object.entries(mapping.cartLines).map((line) => {
       return {
         merge: {
-          parentVariantId,
+          parentVariantId: bundleParentId,
           price: {
             percentageDecrease: {
               // TODO: make configurable via metafield
               value: DEFAULT_PERCENTAGE_DECREASE,
             },
           },
-          cartLines: bundle.map((line) => ({
+          //Chris we need to fix this part
+          cartLines: line.map((line) => ({
             cartLineId: line.id,
             // TODO: create rules around how this should work in the bundle
-            quantity: 1,
+            quantity: line.quantity,
           })),
         } as MergeOperation,
       };
@@ -50,25 +49,23 @@ export function run(input: Input): FunctionRunResult {
 }
 
 function bundler(prev: Bundle, line: CartLine) {
-  const merchandise = line.merchandise as ProductVariantWithMetafields;
-
+  const merchandise = line.merchandise;
+  const attribute = line.attribute;
   if (
-    merchandise.__typename !== "ProductVariant" ||
-    !merchandise.bundleParent
+    merchandise.__typename !== "ProductVariant" || !attribute 
   ) {
     return prev;
   }
 
-  const bundleKey = merchandise.bundleParent.value;
-  if (!prev[bundleKey]) {
+  if (prev.cartLines) {
     return {
       ...prev,
-      [bundleKey]: [line],
+      cartLines: prev.cartLines?.concat(line)
     };
   }
 
   return {
     ...prev,
-    [bundleKey]: prev[bundleKey].concat(line),
+    line
   };
 }
