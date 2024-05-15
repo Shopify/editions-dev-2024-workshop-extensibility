@@ -7,20 +7,16 @@ api_version = "2024-04"
 
 [[extensions]]
 type = "ui_extension"
-name = "post-purchase-bundler"
-handle = "post-purchase-bundler"
+name = "upsell-debug"
+handle = "upsell-debug"
 
 # Controls where in Shopify your extension will be injected,
 # and the file that contains your extension’s source code. Learn more:
 # https://shopify.dev/docs/api/checkout-ui-extensions/unstable/extension-targets-overview
 
 [[extensions.targeting]]
-module = "./src/index.tsx"
-target = "purchase.checkout.cart-line-list.render-after"
-
-[[extensions.targeting.metafields]]
-namespace = "custom"
-key = "bundle_parent_2"
+module = "./src/UpsellDebug.tsx"
+target = "purchase.checkout.block.render"
 
 [extensions.capabilities]
 # Gives your extension access to directly query Shopify’s storefront API.
@@ -36,6 +32,9 @@ api_access = true
 # products, customers, and more. Learn more:
 # https://shopify.dev/docs/api/checkout-ui-extensions/unstable/configuration#metafields
 
+# [[extensions.metafields]]
+# namespace = "my_namespace"
+# key = "my_key"
 # [[extensions.metafields]]
 # namespace = "my_namespace"
 # key = "my_other_key"
