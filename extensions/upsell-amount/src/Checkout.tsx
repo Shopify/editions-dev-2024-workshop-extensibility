@@ -1,9 +1,8 @@
 import {
   reactExtension,
   Text,
-  Icon,
-  InlineLayout,
   BlockSpacer,
+  Tag,
   useCartLineTarget,
   useLanguage,
 } from "@shopify/ui-extensions-react/checkout";
@@ -35,12 +34,9 @@ function Extension() {
   return (
     <>
       <BlockSpacer spacing="extraTight" />
-      <InlineLayout blockAlignment="center" columns="auto" spacing="extraTight">
-        <Icon size="small" source="discount" />
-        <Text size="small" appearance="subdued">
-          Bundle savings ({formattedSavings})
-        </Text>
-      </InlineLayout>
+      <Tag icon="discount">
+        <Text appearance="subdued">Bundle savings ({formattedSavings})</Text>
+      </Tag>
     </>
   );
 }

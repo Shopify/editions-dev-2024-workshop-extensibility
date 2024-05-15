@@ -1,8 +1,8 @@
 query Input {
-  cartTransform{
-      bundleParent: metafield(key: "bundle_parent", namespace: "custom"){
-        value
-      }
+  cartTransform {
+    bundleParent: metafield(key: "bundle_parent", namespace: "custom") {
+      value
+    }
   }
   cart {
     lines {
@@ -13,7 +13,7 @@ query Input {
           amount
         }
       }
-      attribute(key: "_bundle_targets"){
+      canBundle: attribute(key: "_bundle_targets") {
         value
       }
       merchandise {

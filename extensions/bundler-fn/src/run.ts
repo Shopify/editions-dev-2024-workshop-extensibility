@@ -1,71 +1,68 @@
 import type {
-  Input,
+  Input as GeneratedInput,
   FunctionRunResult,
-  CartLine,
   MergeOperation,
+  CartTransform,
+  CartLine,
 } from "../generated/api";
 
+// TODO: make these hard-coded defaults configurable via metafield
 const DEFAULT_PERCENTAGE_DECREASE = 15;
+const DEFAULT_BUNDLE_SIZE = 2;
 
-interface Bundle2 {
-  [bundleParentId: string]: CartLine[];
-}
+const EMPTY_OPERATION = {
+  operations: [],
+};
 
-interface Bundle {
-  cartLines: Array<CartLine>;
+interface Input extends GeneratedInput {
+  cartTransform: CartTransform & {
+    bundleParent: {
+      value: string;
+    };
+  };
+  cart: {
+    lines: (CartLine & {
+      canBundle: {
+        value: null | "true";
+      };
+    })[];
+  };
 }
 
 export function run(input: Input): FunctionRunResult {
   const bundleParentId = input.cartTransform.bundleParent.value;
-  const mapping = input.cart.lines.reduce<Bundle>(bundler, {cartLines: []});
-  if (Object.values(mapping).some((bundle) => bundle?.length <= 1)) {
-    return {
-      operations: [],
-    };
+
+  if (!bundleParentId || input.cart.lines.length <= 1) {
+    return EMPTY_OPERATION;
   }
-  
-  console.error(JSON.stringify(mapping));
+
+  const bundleableCartlines = input.cart.lines.filter((line, idx) => {
+    if (line.canBundle?.value !== "true") return false;
+    if (idx >= DEFAULT_BUNDLE_SIZE) return false;
+
+    return true;
+  });
+
+  if (bundleableCartlines.length !== 2) {
+    return EMPTY_OPERATION;
+  }
+
   return {
-    operations: Object.entries(mapping.cartLines).map((line) => {
-      return {
+    operations: [
+      {
         merge: {
           parentVariantId: bundleParentId,
           price: {
             percentageDecrease: {
-              // TODO: make configurable via metafield
               value: DEFAULT_PERCENTAGE_DECREASE,
             },
           },
-          //Chris we need to fix this part
-          cartLines: line.map((line) => ({
+          cartLines: bundleableCartlines.map((line) => ({
             cartLineId: line.id,
-            // TODO: create rules around how this should work in the bundle
-            quantity: line.quantity,
+            quantity: 1,
           })),
         } as MergeOperation,
-      };
-    }),
-  };
-}
-
-function bundler(prev: Bundle, line: CartLine) {
-  const merchandise = line.merchandise;
-  const attribute = line.attribute;
-  if (
-    merchandise.__typename !== "ProductVariant" || !attribute 
-  ) {
-    return prev;
-  }
-
-  if (prev.cartLines) {
-    return {
-      ...prev,
-      cartLines: prev.cartLines?.concat(line)
-    };
-  }
-
-  return {
-    ...prev,
-    line
+      },
+    ],
   };
 }
