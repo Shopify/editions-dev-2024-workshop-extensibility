@@ -8,6 +8,7 @@ import {
   InlineStack,
   BlockLayout,
   BlockSpacer,
+  BlockStack,
   useApplyCartLinesChange,
   useCartLines,
   useLanguage,
@@ -69,24 +70,29 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
     >
       <Text emphasis="bold">Bundle up and save</Text>
       <BlockSpacer />
-      <InlineLayout spacing="tight" columns={["15%", "65%", "20%"]}>
-        <Image
-          cornerRadius="base"
-          accessibilityDescription={recommendation.productVariant.image.altText}
-          source={recommendation.productVariant.image.url}
-        />
-        <BlockLayout rows={["20%", 22]}>
-          <BlockSpacer />
-          <Text>
-            {recommendation.productVariant.title || recommendation.productTitle}
-          </Text>
-          <InlineStack spacing="tight">
-            <Text>{discountedBundlePrice}</Text>
-            <Text accessibilityRole="deletion" appearance="subdued">
-              {compareAtPrice}
+      <InlineLayout spacing="tight" columns={["fill", "20%"]}>
+        <InlineStack>
+          <Image
+            cornerRadius="base"
+            accessibilityDescription={
+              recommendation.productVariant.image.altText
+            }
+            source={recommendation.productVariant.image.url}
+          />
+          <BlockLayout rows={["20%", 22]}>
+            <BlockSpacer />
+            <Text>
+              {recommendation.productVariant.title ||
+                recommendation.productTitle}
             </Text>
-          </InlineStack>
-        </BlockLayout>
+            <InlineStack spacing="tight">
+              <Text>{discountedBundlePrice}</Text>
+              <Text accessibilityRole="deletion" appearance="subdued">
+                {compareAtPrice}
+              </Text>
+            </InlineStack>
+          </BlockLayout>
+        </InlineStack>
         <View maxBlockSize={10} minInlineSize="25%" inlineAlignment="end">
           <Button disabled={adding} onPress={handleAddToCart}>
             Add
