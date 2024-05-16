@@ -27,14 +27,14 @@ interface ExtensionProps {
   firstLine?: CartLine;
 }
 
-// TODO: pull this from bundle parent metafields
+// TODO: pull this from bundle parent metafield
 const DEFAULT_PERCENTAGE_DECREASE = 15;
 
 export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
   const [adding, setAdding] = useState(false);
-  const lang = useLanguage();
-  const lines = useCartLines();
   const applyCartLinesChange = useApplyCartLinesChange();
+  const lines = useCartLines();
+  const lang = useLanguage();
 
   const hasBundles = lines.some((line) => line.lineComponents.length >= 1);
   if (!recommendation || hasBundles || !firstLine) {
@@ -48,17 +48,16 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
   const subtotalPrice = lines.reduce((prev, curr) => {
     return prev + curr.cost.totalAmount.amount;
   }, recommendationPrice);
+
   const bundleSavings = subtotalPrice * (DEFAULT_PERCENTAGE_DECREASE / 100);
 
-  const discountedBundlePrice = new Intl.NumberFormat(lang.isoCode, {
+  const { format } = new Intl.NumberFormat(lang.isoCode, {
     style: "currency",
     currency: recommendation.productVariant.price.currencyCode,
-  }).format(recommendationPrice - bundleSavings);
+  });
 
-  const compareAtPrice = new Intl.NumberFormat(lang.isoCode, {
-    style: "currency",
-    currency: recommendation.productVariant.price.currencyCode,
-  }).format(recommendationPrice);
+  const discountedBundlePrice = format(recommendationPrice - bundleSavings);
+  const compareAtPrice = format(recommendationPrice);
 
   return (
     <View
@@ -99,9 +98,25 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
   async function handleAddToCart() {
     const lineChanges: CartLineChange[] = [
       {
+        type: "updateCartLine",
+        id: firstLine.id,
+        attributes: [
+          {
+            key: "_bundle_targets",
+            value: "true",
+          },
+        ],
+      },
+      {
         type: "addCartLine",
         merchandiseId: recommendation.productVariant.id,
         quantity: 1,
+        attributes: [
+          {
+            key: "_bundle_targets",
+            value: "true",
+          },
+        ],
       },
     ];
 
