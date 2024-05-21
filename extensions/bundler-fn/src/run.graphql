@@ -22,6 +22,9 @@ query Input {
           __typename
           id
           title
+          product {
+            id
+          }
         }
       }
     }

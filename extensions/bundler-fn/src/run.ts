@@ -31,8 +31,13 @@ interface Input extends GeneratedInput {
 
 export function run(input: Input): FunctionRunResult {
   const bundleParentId = input.cartTransform.bundleParent.value;
+  const cartHasBundle = input.cart.lines.some(
+    (line) =>
+      line.merchandise.__typename === "ProductVariant" &&
+      line.merchandise.product.id === bundleParentId,
+  );
 
-  if (!bundleParentId || input.cart.lines.length <= 1) {
+  if (!bundleParentId || input.cart.lines.length <= 1 || cartHasBundle) {
     return EMPTY_OPERATION;
   }
 
