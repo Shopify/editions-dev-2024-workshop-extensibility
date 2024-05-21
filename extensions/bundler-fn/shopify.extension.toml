@@ -1,4 +1,4 @@
-api_version = "2024-01"
+api_version = "2024-04"
 
 [[extensions]]
 handle = "bundler-fn"
@@ -6,15 +6,15 @@ name = "t:name"
 description = "t:description"
 type = "function"
 
-  [[extensions.targeting]]
-  target = "purchase.cart-transform.run"
-  input_query = "src/run.graphql"
-  export = "run"
+[[extensions.targeting]]
+target = "purchase.cart-transform.run"
+input_query = "src/run.graphql"
+export = "run"
 
-  [extensions.build]
-  command = ""
-  path = "dist/function.wasm"
+[extensions.build]
+command = ""
+path = "dist/function.wasm"
 
-  [extensions.ui.paths]
-  create = "/"
-  details = "/"
+[extensions.ui.paths]
+create = "/"
+details = "/"

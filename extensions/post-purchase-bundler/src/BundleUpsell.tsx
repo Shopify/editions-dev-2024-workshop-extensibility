@@ -8,7 +8,6 @@ import {
   InlineStack,
   BlockLayout,
   BlockSpacer,
-  BlockStack,
   useApplyCartLinesChange,
   useCartLines,
   useLanguage,
@@ -42,23 +41,7 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
     return null;
   }
 
-  const recommendationPrice = Number(
-    recommendation.productVariant.price.amount,
-  );
-
-  const subtotalPrice = lines.reduce((prev, curr) => {
-    return prev + curr.cost.totalAmount.amount;
-  }, recommendationPrice);
-
-  const bundleSavings = subtotalPrice * (DEFAULT_PERCENTAGE_DECREASE / 100);
-
-  const { format } = new Intl.NumberFormat(lang.isoCode, {
-    style: "currency",
-    currency: recommendation.productVariant.price.currencyCode,
-  });
-
-  const discountedBundlePrice = format(recommendationPrice - bundleSavings);
-  const compareAtPrice = format(recommendationPrice);
+  const { discountedBundlePrice, compareAtPrice } = calculatePricing();
 
   return (
     <View
@@ -135,5 +118,27 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
       }
     }
     setAdding(false);
+  }
+
+  function calculatePricing() {
+    const recommendationPrice = Number(
+      recommendation.productVariant.price.amount,
+    );
+
+    const subtotalPrice = lines.reduce((prev, curr) => {
+      return prev + curr.cost.totalAmount.amount;
+    }, recommendationPrice);
+
+    const bundleSavings = subtotalPrice * (DEFAULT_PERCENTAGE_DECREASE / 100);
+
+    const { format } = new Intl.NumberFormat(lang.isoCode, {
+      style: "currency",
+      currency: recommendation.productVariant.price.currencyCode,
+    });
+
+    return {
+      discountedBundlePrice: format(recommendationPrice - bundleSavings),
+      compareAtPrice: format(recommendationPrice),
+    };
   }
 }
