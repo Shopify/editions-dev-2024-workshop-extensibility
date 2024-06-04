@@ -35,7 +35,7 @@ export default reactExtension(
   async (api) => {
     // get first product ID to query for a product recommendation, skip if a bundle
     const firstLine = api.lines.current.find(
-      (line) => line.lineComponents.length === 0,
+      (line) => line,
     );
 
     const recommendation = await fetchFirstRecommendation(
@@ -43,7 +43,7 @@ export default reactExtension(
     );
 
     return (
-      <BundleUpsell recommendation={recommendation} firstLine={firstLine} />
+      <BundleUpsell recommendation={recommendation}/>
     );
 
     async function fetchFirstRecommendation(productId?: string) {

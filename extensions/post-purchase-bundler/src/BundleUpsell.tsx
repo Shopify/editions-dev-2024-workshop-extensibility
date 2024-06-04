@@ -8,9 +8,7 @@ import {
   InlineStack,
   BlockLayout,
   BlockSpacer,
-  BlockStack,
   useApplyCartLinesChange,
-  useCartLines,
   useLanguage,
 } from "@shopify/ui-extensions-react/checkout";
 import type { CartLineChange } from "@shopify/ui-extensions/checkout";
@@ -31,14 +29,12 @@ interface ExtensionProps {
 // TODO: pull this from bundle parent metafield
 const DEFAULT_PERCENTAGE_DECREASE = 15;
 
-export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
+export function BundleUpsell({ recommendation}: ExtensionProps) {
   const [adding, setAdding] = useState(false);
   const applyCartLinesChange = useApplyCartLinesChange();
-  const lines = useCartLines();
   const lang = useLanguage();
 
-  const hasBundles = lines.some((line) => line.lineComponents.length >= 1);
-  if (!recommendation || hasBundles || !firstLine) {
+  if (!recommendation) {
     return null;
   }
 
@@ -46,19 +42,12 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
     recommendation.productVariant.price.amount,
   );
 
-  const subtotalPrice = lines.reduce((prev, curr) => {
-    return prev + curr.cost.totalAmount.amount;
-  }, recommendationPrice);
-
-  const bundleSavings = subtotalPrice * (DEFAULT_PERCENTAGE_DECREASE / 100);
-
   const { format } = new Intl.NumberFormat(lang.isoCode, {
     style: "currency",
     currency: recommendation.productVariant.price.currencyCode,
   });
 
-  const discountedBundlePrice = format(recommendationPrice - bundleSavings);
-  const compareAtPrice = format(recommendationPrice);
+  const productPrice = format(recommendationPrice);
 
   return (
     <View
@@ -67,7 +56,7 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
       cornerRadius="base"
       padding={["tight", "base", "base", "base"]}
     >
-      <Text emphasis="bold">Bundle up and save</Text>
+      <Text emphasis="bold">Add to your cart</Text>
       <BlockSpacer />
       <InlineLayout spacing="tight" columns={["fill", "20%"]}>
         <InlineStack>
@@ -84,12 +73,7 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
               {recommendation.productVariant.title ||
                 recommendation.productTitle}
             </Text>
-            <InlineStack spacing="tight">
-              <Text>{discountedBundlePrice}</Text>
-              <Text accessibilityRole="deletion" appearance="subdued">
-                {compareAtPrice}
-              </Text>
-            </InlineStack>
+              <Text>{productPrice}</Text>
           </BlockLayout>
         </InlineStack>
         <View maxBlockSize={10} minInlineSize="25%" inlineAlignment="end">
@@ -102,38 +86,19 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
   );
 
   async function handleAddToCart() {
-    const lineChanges: CartLineChange[] = [
-      {
-        type: "updateCartLine",
-        id: firstLine.id,
-        attributes: [
-          {
-            key: "_bundle_targets",
-            value: "true",
-          },
-        ],
-      },
+    const lineChange: CartLineChange =
       {
         type: "addCartLine",
         merchandiseId: recommendation.productVariant.id,
-        quantity: 1,
-        attributes: [
-          {
-            key: "_bundle_targets",
-            value: "true",
-          },
-        ],
-      },
-    ];
+        quantity: 1
+      };
 
     setAdding(true);
-    for (const change of lineChanges) {
-      const result = await applyCartLinesChange(change);
-      if (result.type === "error") {
-        console.error(result.message);
-        break;
-      }
+    const result = await applyCartLinesChange(lineChange);
+    if (result.type === "error") {
+      console.error(result.message);
     }
     setAdding(false);
   }
+
 }
