@@ -52,11 +52,23 @@ export function run(input: Input): FunctionRunResult {
     return EMPTY_OPERATION;
   }
 
+  let originalCost = 0;
+  bundleableCartlines.forEach((line) => {
+    originalCost += Number(line.cost.amountPerQuantity.amount) * line.quantity;
+  });
+  const bundleSavings = originalCost * (DEFAULT_PERCENTAGE_DECREASE / 100);
+
   return {
     operations: [
       {
         merge: {
           parentVariantId: bundleParentId,
+          attributes: [
+            {
+              key: "_bundle_savings_amount",
+              value: String(bundleSavings),
+            },
+          ],
           price: {
             percentageDecrease: {
               value: DEFAULT_PERCENTAGE_DECREASE,
