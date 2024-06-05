@@ -1,7 +1,13 @@
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useActionData, useNavigation, useSubmit, useLoaderData } from "@remix-run/react";
+import {
+  useActionData,
+  useNavigation,
+  useNavigate,
+  useSubmit,
+} from "@remix-run/react";
+
 import {
   Page,
   Layout,
@@ -17,44 +23,16 @@ import {
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
-  const response = await admin.graphql(
-    `#graphql
-      query getProductIdFromHandle($handle: String!) {
-          productByHandle(handle: $handle) {
-            id
-            title
-            handle
-            status
+  await authenticate.admin(request);
 
-            variants(first: 10) {
-              edges {
-                node {
-                  id
-                  price
-                  barcode
-                  createdAt
-                }
-              }
-            }
-        }
-      }`,
-    {
-      variables: {
-          handle: `snowboard-bundle`
-      },
-    },
-  );
-  const responseJson = await response.json();
-
-  return json({
-    product: responseJson!.data!.productByHandle!,
-    variant: responseJson!.data!.productByHandle?.variants,
-  });
+  return null;
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
+  const color = ["Red", "Orange", "Yellow", "Green"][
+    Math.floor(Math.random() * 4)
+  ];
   const response = await admin.graphql(
     `#graphql
       mutation populateProduct($input: ProductInput!) {
@@ -69,6 +47,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 node {
                   id
                   price
+                  barcode
+                  createdAt
                 }
               }
             }
@@ -78,9 +58,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     {
       variables: {
         input: {
-          title: `Snowboard bundle container`,
-          handle: `snowboard-bundle`,
-          claimOwnership: {bundles: true}
+          title: `${color} Snowboard`,
         },
       },
     },
@@ -122,7 +100,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function Index() {
   const nav = useNavigation();
   const actionData = useActionData<typeof action>();
-  const loaderData = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
   const submit = useSubmit();
   const isLoading =
     ["loading", "submitting"].includes(nav.state) && nav.formMethod === "POST";
@@ -137,29 +115,7 @@ export default function Index() {
     }
   }, [productId]);
   const generateProduct = () => submit({}, { replace: true, method: "POST" });
-  if (loaderData.product != null){
-    return (
-      <Page>
-        <>
-          <Text as="h2">Here are details of your bundle product:</Text>
-          <Box
-          padding="400"
-          background="bg-surface-active"
-          borderWidth="025"
-          borderRadius="200"
-          borderColor="border"
-          overflowX="scroll"
-          >
-            <pre style={{ margin: 0 }}>
-              <code>
-                {JSON.stringify(loaderData.product, null, 2)}
-              </code>
-            </pre>
-          </Box>
-        </>
-      </Page>
-    );
-  }
+
   return (
     <Page>
       <ui-title-bar title="Remix app template">
@@ -221,6 +177,43 @@ export default function Index() {
                 <InlineStack gap="300">
                   <Button loading={isLoading} onClick={generateProduct}>
                     Generate a product
+                  </Button>
+                  {actionData?.product && (
+                    <Button
+                      url={`shopify:admin/products/${productId}`}
+                      target="_blank"
+                      variant="plain"
+                    >
+                      View product
+                    </Button>
+                  )}
+                </InlineStack>
+                <BlockStack gap="200">
+                  <Text as="h3" variant="headingMd">
+                    Get started with bundles
+                  </Text>
+                  <Text as="p" variant="bodyMd">
+                    To create an extension that uses bundles, we need to follow
+                    these steps:
+                    <List type="number">
+                      <List.Item>Generate the product bundle</List.Item>
+                      <List.Item>
+                        Activate the cart transform function extension
+                      </List.Item>
+                      <List.Item>
+                        Set the generated product as a metafield
+                      </List.Item>
+                    </List>
+                  </Text>
+                </BlockStack>
+                <InlineStack gap="300">
+                  <Button
+                    loading={isLoading}
+                    onClick={() => {
+                      navigate("/dynamic-bundles/bundle-product");
+                    }}
+                  >
+                    Generate a bundle parent product
                   </Button>
                   {actionData?.product && (
                     <Button
