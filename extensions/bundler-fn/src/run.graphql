@@ -13,9 +13,6 @@ query Input {
           amount
         }
       }
-      canBundle: attribute(key: "_bundle_targets") {
-        value
-      }
       merchandise {
         __typename
         ... on ProductVariant {
