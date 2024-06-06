@@ -28,7 +28,6 @@ const productFromHandleQuery = `#graphql
             url
           }
       }
-      publishedOnChannel(channelId: "gid://shopify/Channel/172883018040")
       variants(first: 10) {
         nodes {
           title
@@ -81,10 +80,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     .then((res) => res.json());
 
   if (response?.data?.productByHandle?.variants?.nodes.length) {
-    if (response.data.productByHandle.hasOwnProperty('publishedOnChannel')) {
-      response.data.productByHandle['publishedOnOnlineStore'] = response.data.productByHandle['publishedOnChannel'];
-      delete response.data.productByHandle['publishedOnChannel'];
-  }
     return json({
       type: "success",
       product: response.data.productByHandle,
