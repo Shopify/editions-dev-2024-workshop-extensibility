@@ -10,14 +10,10 @@ import {
   BlockSpacer,
   useApplyCartLinesChange,
   useCartLines,
-  useLanguage,
+  useApi,
 } from "@shopify/ui-extensions-react/checkout";
-import type { CartLineChange } from "@shopify/ui-extensions/checkout";
-// TODO: we should be able to auto-generate these types, how?
-import type {
-  ProductVariant,
-  CartLine,
-} from "@shopify/hydrogen/storefront-api-types";
+import type { CartLine, CartLineChange } from "@shopify/ui-extensions/checkout";
+import type { ProductVariant } from "@shopify/hydrogen/storefront-api-types";
 
 interface ExtensionProps {
   recommendation?: {
@@ -34,14 +30,14 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
   const [adding, setAdding] = useState(false);
   const applyCartLinesChange = useApplyCartLinesChange();
   const lines = useCartLines();
-  const lang = useLanguage();
+  const { i18n } = useApi();
 
   const hasBundles = lines.some((line) => line.lineComponents.length >= 1);
   if (!recommendation || hasBundles || !firstLine) {
     return null;
   }
 
-  const { discountedBundlePrice, compareAtPrice } = calculatePricing();
+  const { upsellCompareAtPrice, upsellPrice } = calculateUpsellPrice();
 
   return (
     <View
@@ -68,10 +64,10 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
                 recommendation.productTitle}
             </Text>
             <InlineStack spacing="tight">
-              <Text>{discountedBundlePrice}</Text>
               <Text accessibilityRole="deletion" appearance="subdued">
-                {compareAtPrice}
+                {upsellCompareAtPrice}
               </Text>
+              <Text>{upsellPrice}</Text>
             </InlineStack>
           </BlockLayout>
         </InlineStack>
@@ -120,25 +116,23 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
     setAdding(false);
   }
 
-  function calculatePricing() {
-    const recommendationPrice = Number(
+  function calculateUpsellPrice() {
+    const upsellCompareAtAmount = Number(
       recommendation.productVariant.price.amount,
     );
 
-    const subtotalPrice = lines.reduce((prev, curr) => {
-      return prev + curr.cost.totalAmount.amount;
-    }, recommendationPrice);
+    const asBundleCompareAtAmount =
+      lines[0].cost.totalAmount.amount / lines[0].quantity +
+      upsellCompareAtAmount;
 
-    const bundleSavings = subtotalPrice * (DEFAULT_PERCENTAGE_DECREASE / 100);
-
-    const { format } = new Intl.NumberFormat(lang.isoCode, {
-      style: "currency",
-      currency: recommendation.productVariant.price.currencyCode,
-    });
+    const asBundleSavingsAmount =
+      asBundleCompareAtAmount * (DEFAULT_PERCENTAGE_DECREASE / 100);
 
     return {
-      discountedBundlePrice: format(recommendationPrice - bundleSavings),
-      compareAtPrice: format(recommendationPrice),
+      upsellPrice: i18n.formatCurrency(
+        upsellCompareAtAmount - asBundleSavingsAmount,
+      ),
+      upsellCompareAtPrice: i18n.formatCurrency(upsellCompareAtAmount),
     };
   }
 }
