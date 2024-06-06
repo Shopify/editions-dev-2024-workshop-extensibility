@@ -3,10 +3,10 @@ import type {
   FunctionRunResult,
 } from "../generated/api";
 
-const NO_CHANGES: FunctionRunResult = {
+const EMPTY_OPERATION: FunctionRunResult = {
   operations: [],
 };
 
 export function run(input: RunInput): FunctionRunResult {
-  return NO_CHANGES;
+  return EMPTY_OPERATION;
 };

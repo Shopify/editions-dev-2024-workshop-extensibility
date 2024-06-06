@@ -9,14 +9,11 @@ import {
   BlockLayout,
   BlockSpacer,
   useApplyCartLinesChange,
-  useLanguage,
+  useCartLines,
+  useApi,
 } from "@shopify/ui-extensions-react/checkout";
-import type { CartLineChange } from "@shopify/ui-extensions/checkout";
-// TODO: we should be able to auto-generate these types, how?
-import type {
-  ProductVariant,
-  CartLine,
-} from "@shopify/hydrogen/storefront-api-types";
+import type { CartLine, CartLineChange } from "@shopify/ui-extensions/checkout";
+import type { ProductVariant } from "@shopify/hydrogen/storefront-api-types";
 
 interface ExtensionProps {
   recommendation?: {
@@ -32,7 +29,8 @@ const DEFAULT_PERCENTAGE_DECREASE = 15;
 export function BundleUpsell({ recommendation}: ExtensionProps) {
   const [adding, setAdding] = useState(false);
   const applyCartLinesChange = useApplyCartLinesChange();
-  const lang = useLanguage();
+  const lines = useCartLines();
+  const { i18n } = useApi();
 
   if (!recommendation) {
     return null;
@@ -100,5 +98,4 @@ export function BundleUpsell({ recommendation}: ExtensionProps) {
     }
     setAdding(false);
   }
-
 }

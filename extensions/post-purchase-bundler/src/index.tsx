@@ -34,6 +34,7 @@ export default reactExtension(
   "purchase.checkout.cart-line-list.render-after",
   async (api) => {
     // get first product ID to query for a product recommendation, skip if a bundle
+    // Why not use `useCartLines`?
     const firstLine = api.lines.current.find(
       (line) => line,
     );
@@ -41,6 +42,8 @@ export default reactExtension(
     const recommendation = await fetchFirstRecommendation(
       firstLine?.merchandise.product.id,
     );
+
+    // We should consider rendering a skeleton while we wait for a response
 
     return (
       <BundleUpsell recommendation={recommendation}/>

@@ -24,6 +24,21 @@ type Attribute {
 }
 
 """
+Key-value pairs that contains additional information.
+"""
+input AttributeOutput {
+  """
+  Key or name of the attribute.
+  """
+  key: String!
+
+  """
+  Value of the attribute.
+  """
+  value: String!
+}
+
+"""
 Represents information about the buyer that is interacting with the cart.
 """
 type BuyerIdentity {
@@ -162,7 +177,14 @@ input CartLineInput {
 An operation to apply to the Cart.
 """
 input CartOperation @oneOf {
+  """
+  A cart line expand operation.
+  """
   expand: ExpandOperation
+
+  """
+  A cart line merge operation.
+  """
   merge: MergeOperation
 
   """
@@ -1448,7 +1470,7 @@ enum CountryCode {
   TO
 
   """
-  Turkey.
+  Türkiye.
   """
   TR
 
@@ -1707,7 +1729,10 @@ enum CurrencyCode {
   """
   Belarusian Ruble (BYR).
   """
-  BYR @deprecated(reason: "`BYR` is deprecated. Use `BYN` available from version `2021-01` onwards instead.")
+  BYR
+    @deprecated(
+      reason: "`BYR` is deprecated. Use `BYN` available from version `2021-01` onwards instead."
+    )
 
   """
   Belize Dollar (BZD).
@@ -2232,7 +2257,10 @@ enum CurrencyCode {
   """
   Sao Tome And Principe Dobra (STD).
   """
-  STD @deprecated(reason: "`STD` is deprecated. Use `STN` available from version `2022-07` onwards instead.")
+  STD
+    @deprecated(
+      reason: "`STD` is deprecated. Use `STN` available from version `2022-07` onwards instead."
+    )
 
   """
   Sao Tome And Principe Dobra (STN).
@@ -2327,7 +2355,10 @@ enum CurrencyCode {
   """
   Venezuelan Bolivares (VEF).
   """
-  VEF @deprecated(reason: "`VEF` is deprecated. Use `VES` available from version `2020-10` onwards instead.")
+  VEF
+    @deprecated(
+      reason: "`VEF` is deprecated. Use `VES` available from version `2020-10` onwards instead."
+    )
 
   """
   Venezuelan Bolivares Soberanos (VES).
@@ -2524,6 +2555,9 @@ Example values: `"29.99"`, `"29.999"`.
 """
 scalar Decimal
 
+"""
+A cart line expand operation.
+"""
 input ExpandOperation {
   """
   The cart line id to expand.
@@ -2552,6 +2586,11 @@ input ExpandOperation {
 }
 
 input ExpandedItem {
+  """
+  The CartLine attributes to be added to component line.
+  """
+  attributes: [AttributeOutput!] = []
+
   """
   The merchandise id of the expanded item.
   """
@@ -2599,8 +2638,7 @@ input ExpandedItemPriceAdjustmentValue @oneOf {
 }
 
 """
-Transformations to apply to the Cart. In API versions 2023-10 and beyond, this
-type is deprecated in favor of `FunctionRunResult`.
+The run target result. In API versions 2023-10 and beyond, this type is deprecated in favor of `FunctionRunResult`.
 """
 input FunctionResult {
   """
@@ -2610,7 +2648,7 @@ input FunctionResult {
 }
 
 """
-Transformations to apply to the Cart.
+The run target result.
 """
 input FunctionRunResult {
   """
@@ -3576,7 +3614,15 @@ The merchandise to be purchased at checkout.
 """
 union Merchandise = CustomProduct | ProductVariant
 
+"""
+A cart line merge operation.
+"""
 input MergeOperation {
+  """
+  The CartLine attributes to be added to the parent line.
+  """
+  attributes: [AttributeOutput!] = []
+
   """
   The list of cart lines to merge.
   """

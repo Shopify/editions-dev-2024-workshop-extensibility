@@ -13,7 +13,7 @@ include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "unauthenticated_read_product_listings,write_cart_transforms,write_products"
+scopes = "unauthenticated_read_product_listings,write_cart_transforms,write_products,write_publications"
 
 [auth]
 redirect_urls = [

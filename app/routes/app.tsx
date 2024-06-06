@@ -1,4 +1,6 @@
 import { json } from "@remix-run/node";
+import type { LoaderFunction, HeadersArgs } from "@remix-run/node";
+
 import { Link, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
 import { AppProvider } from "@shopify/shopify-app-remix/react";
@@ -7,14 +9,14 @@ import { authenticate } from "../shopify.server";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
-export const loader = async ({ request }) => {
+export const loader: LoaderFunction = async ({ request }) => {
   await authenticate.admin(request);
 
   return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
 };
 
 export default function App() {
-  const { apiKey } = useLoaderData();
+  const { apiKey } = useLoaderData<typeof loader>();
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
@@ -22,7 +24,6 @@ export default function App() {
         <Link to="/app" rel="home">
           Home
         </Link>
-        <Link to="/app/function-management">Manage your function</Link>
       </ui-nav-menu>
       <Outlet />
     </AppProvider>
@@ -34,6 +35,6 @@ export function ErrorBoundary() {
   return boundary.error(useRouteError());
 }
 
-export const headers = (headersArgs) => {
+export const headers = (headersArgs: HeadersArgs) => {
   return boundary.headers(headersArgs);
 };
