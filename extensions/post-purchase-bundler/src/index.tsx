@@ -36,7 +36,7 @@ export default reactExtension(
     // get first product ID to query for a product recommendation, skip if a bundle
     // Why not use `useCartLines`?
     const firstLine = api.lines.current.find(
-      (line) => line.lineComponents.length === 0,
+      (line) => line,
     );
 
     const recommendation = await fetchFirstRecommendation(
@@ -46,7 +46,7 @@ export default reactExtension(
     // We should consider rendering a skeleton while we wait for a response
 
     return (
-      <BundleUpsell recommendation={recommendation} firstLine={firstLine} />
+      <BundleUpsell recommendation={recommendation}/>
     );
 
     async function fetchFirstRecommendation(productId?: string) {
