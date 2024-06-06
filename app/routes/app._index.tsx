@@ -1,5 +1,4 @@
 import {
-  useNavigation,
   useNavigate,
 } from "@remix-run/react";
 
@@ -16,7 +15,6 @@ import {
 
 export default function Index() {
   const navigate = useNavigate();
-
   return (
     <Page>
       <BlockStack gap="500">
