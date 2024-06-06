@@ -49,8 +49,7 @@ export function run(input: Input): FunctionRunResult {
   }
 
   const compareAtAmount = bundleableCartlines.reduce(
-    (sum, line) =>
-      sum + Number(line.cost.amountPerQuantity.amount) * line.quantity,
+    (sum, line) => sum + Number(line.cost.amountPerQuantity.amount),
     0,
   );
 

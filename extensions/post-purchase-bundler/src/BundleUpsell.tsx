@@ -122,7 +122,8 @@ export function BundleUpsell({ recommendation, firstLine }: ExtensionProps) {
     );
 
     const asBundleCompareAtAmount =
-      lines[0].cost.totalAmount.amount + upsellCompareAtAmount;
+      lines[0].cost.totalAmount.amount / lines[0].quantity +
+      upsellCompareAtAmount;
 
     const asBundleSavingsAmount =
       asBundleCompareAtAmount * (DEFAULT_PERCENTAGE_DECREASE / 100);
