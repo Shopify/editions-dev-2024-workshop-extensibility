@@ -16,6 +16,7 @@ import {
 } from "@shopify/polaris";
 
 import { useBootstrapContext } from "~/context/dynamic-bundles";
+import { MediaContentType } from "~/types/admin.types";
 
 const productFromHandleQuery = `#graphql
   query GetProductIdFromHandle($handle: String!) {
@@ -23,6 +24,12 @@ const productFromHandleQuery = `#graphql
       id
       title
       handle
+      images(first:5){
+          nodes{
+            url
+          }
+      }
+      publishedOnChannel(channelId: "gid://shopify/Channel/172883018040")
       variants(first: 10) {
         nodes {
           title
@@ -34,13 +41,21 @@ const productFromHandleQuery = `#graphql
 `;
 
 const bundleCreateProductMutation = `#graphql
-  mutation CreateBundleParentProduct($input: ProductInput!) {
-    productCreate(input: $input) {
+  mutation CreateBundleParentProduct($input: ProductInput!, $media: [CreateMediaInput!]) {
+    productCreate(input: $input, media: $media) {
       product {
         id
         title
         handle
         status
+        productPublications(first:5){
+          nodes{
+            channel{
+              id
+              handle
+            }
+          }              
+        }
         variants(first: 1) {
             nodes {
               id
@@ -67,6 +82,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     .then((res) => res.json());
 
   if (response?.data?.productByHandle?.variants?.nodes.length) {
+    if (response.data.productByHandle.hasOwnProperty('publishedOnChannel')) {
+      response.data.productByHandle['publishedOnOnlineStore'] = response.data.productByHandle['publishedOnChannel'];
+      delete response.data.productByHandle['publishedOnChannel'];
+  }
     return json({
       type: "success",
       product: response.data.productByHandle,
@@ -80,10 +99,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
           title: `Snowboard bundle container`,
           handle: `snowboard-bundle`,
           claimOwnership: { bundles: true },
+          productPublications: [
+            {
+              channelHandle: `online_store`
+            }
+          ]
         },
+        media: [{
+          mediaContentType: `IMAGE`,
+          originalSource: `https://cdn.shopify.com/s/files/1/0789/6259/0008/files/Snowboard_bundle.png?v=1717692544`
+        }]
       },
     })
     .then((res) => res.json());
+    console.log(creation.data?.product);
 
   if (!creation.data?.productCreate?.product) {
     return json({
