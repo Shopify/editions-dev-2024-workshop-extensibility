@@ -16,7 +16,6 @@ import {
 } from "@shopify/polaris";
 
 import { useBootstrapContext } from "~/context/dynamic-bundles";
-import { MediaContentType } from "~/types/admin.types";
 
 const productFromHandleQuery = `#graphql
   query GetProductIdFromHandle($handle: String!) {
@@ -112,7 +111,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       },
     })
     .then((res) => res.json());
-    console.log(creation.data?.product);
 
   if (!creation.data?.productCreate?.product) {
     return json({

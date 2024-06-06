@@ -1,4 +1,3 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
   useNavigation,
   useNavigate,
@@ -14,23 +13,9 @@ import {
   List,
   InlineStack,
 } from "@shopify/polaris";
-import { authenticate } from "../shopify.server";
-
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-  return null;
-};
-
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
-  return null;
-};
 
 export default function Index() {
-  const nav = useNavigation();
   const navigate = useNavigate();
-  const isLoading =
-    ["loading", "submitting"].includes(nav.state) && nav.formMethod === "POST";
 
   return (
     <Page>
@@ -58,7 +43,6 @@ export default function Index() {
                 </BlockStack>
                 <InlineStack gap="300">
                   <Button
-                    loading={isLoading}
                     onClick={() => {
                       navigate("/dynamic-bundles/bundle-product");
                     }}
