@@ -1,12 +1,10 @@
-import { reactExtension } from "@shopify/ui-extensions-react/checkout";
-// TODO: we should be able to auto-generate these types, how?
+import { reactExtension, useCartLines } from "@shopify/ui-extensions-react/checkout";
 import type { Product } from "@shopify/hydrogen/storefront-api-types";
 
-import { BundleUpsell } from "./BundleUpsell";
+import { BundleProductOffer } from "./BundleProductOffer";
 
 const productRecommendationsQuery = `#graphql
   query ProductRecommendations($productId: ID!) {
-    # TODO: this is currently inferencing Admin API graph vs Storefront
     productRecommendations(productId: $productId) {
       title
       variants(first: 1) {
@@ -34,8 +32,8 @@ export default reactExtension(
   "purchase.checkout.cart-line-list.render-after",
   async (api) => {
     // get first product ID to query for a product recommendation, skip if a bundle
-    // Why not use `useCartLines`?
-    const firstLine = api.lines.current.find(
+    const lines = useCartLines();
+    const firstLine = lines.find(
       (line) => line,
     );
 
@@ -46,7 +44,7 @@ export default reactExtension(
     // We should consider rendering a skeleton while we wait for a response
 
     return (
-      <BundleUpsell recommendation={recommendation}/>
+      <BundleProductOffer recommendation={recommendation}/>
     );
 
     async function fetchFirstRecommendation(productId?: string) {

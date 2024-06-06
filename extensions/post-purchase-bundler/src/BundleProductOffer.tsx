@@ -9,7 +9,6 @@ import {
   BlockLayout,
   BlockSpacer,
   useApplyCartLinesChange,
-  useCartLines,
   useApi,
 } from "@shopify/ui-extensions-react/checkout";
 import type { CartLine, CartLineChange } from "@shopify/ui-extensions/checkout";
@@ -23,29 +22,16 @@ interface ExtensionProps {
   firstLine?: CartLine;
 }
 
-// TODO: pull this from bundle parent metafield
-const DEFAULT_PERCENTAGE_DECREASE = 15;
-
-export function BundleUpsell({ recommendation}: ExtensionProps) {
+export function BundleProductOffer({ recommendation}: ExtensionProps) {
   const [adding, setAdding] = useState(false);
   const applyCartLinesChange = useApplyCartLinesChange();
-  const lines = useCartLines();
   const { i18n } = useApi();
 
   if (!recommendation) {
     return null;
   }
 
-  const recommendationPrice = Number(
-    recommendation.productVariant.price.amount,
-  );
-
-  const { format } = new Intl.NumberFormat(lang.isoCode, {
-    style: "currency",
-    currency: recommendation.productVariant.price.currencyCode,
-  });
-
-  const productPrice = format(recommendationPrice);
+  const productPrice = i18n.formatCurrency(Number(recommendation.productVariant.price.amount));
 
   return (
     <View

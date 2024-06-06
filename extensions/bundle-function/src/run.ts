@@ -1,5 +1,5 @@
 import type {
-  RunInput,
+  Input,
   FunctionRunResult,
 } from "../generated/api";
 
@@ -7,6 +7,6 @@ const EMPTY_OPERATION: FunctionRunResult = {
   operations: [],
 };
 
-export function run(input: RunInput): FunctionRunResult {
+export function run(input: Input): FunctionRunResult {
   return EMPTY_OPERATION;
 };

@@ -1,0 +1,10 @@
+api_version = "2024-04"
+
+[[extensions]]
+type = "ui_extension"
+name = "bundle-savings-amount"
+handle = "bundle-savings-amount"
+
+[[extensions.targeting]]
+module = "./src/Checkout.tsx"
+target = "purchase.checkout.cart-line-item.render-after"
