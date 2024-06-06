@@ -24,8 +24,6 @@ export default function App() {
         <Link to="/app" rel="home">
           Home
         </Link>
-        <Link to="/app/function-management">Manage your function</Link>
-        <Link to="/bootstrap/bundler">Get started with bundles</Link>
       </ui-nav-menu>
       <Outlet />
     </AppProvider>

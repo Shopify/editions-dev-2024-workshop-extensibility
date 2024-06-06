@@ -1,7 +1,6 @@
 import type {
   Input as GeneratedInput,
   FunctionRunResult,
-  MergeOperation,
   CartTransform,
   CartLine,
 } from "../generated/api";
@@ -41,22 +40,22 @@ export function run(input: Input): FunctionRunResult {
     return EMPTY_OPERATION;
   }
 
-  const bundleableCartlines = input.cart.lines.filter((line, idx) => {
-    if (line.canBundle?.value !== "true") return false;
-    if (idx >= DEFAULT_BUNDLE_SIZE) return false;
+  const bundleableCartlines = input.cart.lines
+    .filter((line) => line.canBundle?.value === "true")
+    .slice(0, DEFAULT_BUNDLE_SIZE);
 
-    return true;
-  });
-
-  if (bundleableCartlines.length !== 2) {
+  if (bundleableCartlines.length !== DEFAULT_BUNDLE_SIZE) {
     return EMPTY_OPERATION;
   }
 
-  let originalCost = 0;
-  bundleableCartlines.forEach((line) => {
-    originalCost += Number(line.cost.amountPerQuantity.amount) * line.quantity;
-  });
-  const bundleSavings = originalCost * (DEFAULT_PERCENTAGE_DECREASE / 100);
+  const compareAtAmount = bundleableCartlines.reduce(
+    (sum, line) =>
+      sum + Number(line.cost.amountPerQuantity.amount) * line.quantity,
+    0,
+  );
+
+  const bundleSavingsAmount =
+    compareAtAmount * (DEFAULT_PERCENTAGE_DECREASE / 100);
 
   return {
     operations: [
@@ -66,7 +65,7 @@ export function run(input: Input): FunctionRunResult {
           attributes: [
             {
               key: "_bundle_savings_amount",
-              value: String(bundleSavings),
+              value: String(bundleSavingsAmount),
             },
           ],
           price: {
@@ -78,7 +77,7 @@ export function run(input: Input): FunctionRunResult {
             cartLineId: line.id,
             quantity: 1,
           })),
-        } as MergeOperation,
+        },
       },
     ],
   };
