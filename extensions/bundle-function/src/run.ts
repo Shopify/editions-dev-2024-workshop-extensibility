@@ -23,8 +23,8 @@ interface Input extends GeneratedInput {
   };
   cart: {
     lines: (CartLine & {
-      canBundle: {
-        value: null | "true";
+      bundleWith: {
+        value: string;
       };
     })[];
   };
