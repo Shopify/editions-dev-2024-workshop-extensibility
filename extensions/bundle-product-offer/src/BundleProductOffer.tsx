@@ -72,9 +72,6 @@ export function BundleProductOffer({ recommendation }: ExtensionProps) {
   );
 
   async function handleAddToCart() {
-    if (!recommendation) {
-      return null;
-    }
     const lineChange: CartLineChange = {
       type: "addCartLine",
       merchandiseId: recommendation.productVariant.id,
