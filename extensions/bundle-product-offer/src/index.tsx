@@ -44,7 +44,7 @@ export default reactExtension(
 function Extension() {
   const { query } = useApi();
   const [loading, setLoading] = useState(false);
-  const [product, setProduct] = useState(null);
+  const [recommendedProduct, setRecommendedProduct] = useState(null);
 
   // use the first cartline to query for a product recommendation, skip if a bundle
   const lines = useCartLines();
@@ -81,7 +81,7 @@ function Extension() {
 
       const [{ variants, title }] = results.data.productRecommendations;
 
-      setProduct({
+      setRecommendedProduct({
         productTitle: title,
         productVariant: variants.nodes[0],
       });
@@ -99,9 +99,12 @@ function Extension() {
     return <BundleProductOfferSkeleton />;
   }
 
-  if (product) {
+  if (recommendedProduct) {
     return (
-      <BundleProductOffer recommendation={product} firstLine={firstLine} />
+      <BundleProductOffer
+        recommendation={recommendedProduct}
+        firstLine={firstLine}
+      />
     );
   }
 

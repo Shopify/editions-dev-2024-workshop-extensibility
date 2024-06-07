@@ -17,7 +17,7 @@ import type { CartLine, CartLineChange } from "@shopify/ui-extensions/checkout";
 import type { ProductVariant } from "@shopify/hydrogen/storefront-api-types";
 
 interface ExtensionProps {
-  recommendation?: {
+  recommendation: {
     productTitle: string;
     productVariant: ProductVariant;
   };
