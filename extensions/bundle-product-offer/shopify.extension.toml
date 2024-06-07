@@ -1,0 +1,13 @@
+api_version = "2024-04"
+
+[[extensions]]
+type = "ui_extension"
+name = "bundle-product-offer"
+handle = "bundle-product-offer"
+
+[[extensions.targeting]]
+module = "./src/index.tsx"
+target = "purchase.checkout.cart-line-list.render-after"
+
+[extensions.capabilities]
+api_access = true

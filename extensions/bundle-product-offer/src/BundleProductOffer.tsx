@@ -9,7 +9,6 @@ import {
   BlockLayout,
   BlockSpacer,
   useApplyCartLinesChange,
-  useCartLines,
   useApi,
 } from "@shopify/ui-extensions-react/checkout";
 import type { CartLine, CartLineChange } from "@shopify/ui-extensions/checkout";
@@ -23,29 +22,16 @@ interface ExtensionProps {
   firstLine?: CartLine;
 }
 
-// TODO: pull this from bundle parent metafield
-const DEFAULT_PERCENTAGE_DECREASE = 15;
-
-export function BundleUpsell({ recommendation}: ExtensionProps) {
+export function BundleProductOffer({ recommendation }: ExtensionProps) {
   const [adding, setAdding] = useState(false);
   const applyCartLinesChange = useApplyCartLinesChange();
-  const lines = useCartLines();
   const { i18n } = useApi();
 
   if (!recommendation) {
     return null;
   }
 
-  const recommendationPrice = Number(
-    recommendation.productVariant.price.amount,
-  );
-
-  const { format } = new Intl.NumberFormat(lang.isoCode, {
-    style: "currency",
-    currency: recommendation.productVariant.price.currencyCode,
-  });
-
-  const productPrice = format(recommendationPrice);
+  const productPrice = i18n.formatCurrency(Number(recommendation.productVariant.price.amount));
 
   return (
     <View
@@ -58,13 +44,15 @@ export function BundleUpsell({ recommendation}: ExtensionProps) {
       <BlockSpacer />
       <InlineLayout spacing="tight" columns={["fill", "20%"]}>
         <InlineStack>
+          {recommendation.productVariant.image &&
           <Image
             cornerRadius="base"
             accessibilityDescription={
-              recommendation.productVariant.image.altText
+              recommendation.productVariant.image.altText || ""
             }
             source={recommendation.productVariant.image.url}
           />
+          }
           <BlockLayout rows={["20%", 22]}>
             <BlockSpacer />
             <Text>
@@ -84,6 +72,7 @@ export function BundleUpsell({ recommendation}: ExtensionProps) {
   );
 
   async function handleAddToCart() {
+    if (!recommendation) {return null};
     const lineChange: CartLineChange =
       {
         type: "addCartLine",
