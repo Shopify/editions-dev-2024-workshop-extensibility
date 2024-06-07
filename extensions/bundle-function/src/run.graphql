@@ -13,6 +13,9 @@ query Input {
           amount
         }
       }
+      bundleWith: attribute(key: "_bundle_with") {
+        value
+      }
       merchandise {
         __typename
         ... on ProductVariant {
