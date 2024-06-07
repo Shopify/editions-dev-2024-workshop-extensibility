@@ -24,7 +24,12 @@ interface ExtensionProps {
   firstLine?: CartLine;
 }
 
-export function BundleProductOffer({ recommendation }: ExtensionProps) {
+const DEFAULT_PERCENTAGE_DECREASE = 15;
+
+export function BundleProductOffer({
+  recommendation,
+  firstLine,
+}: ExtensionProps) {
   const [adding, setAdding] = useState(false);
   const applyCartLinesChange = useApplyCartLinesChange();
   const { i18n } = useApi();
@@ -32,6 +37,8 @@ export function BundleProductOffer({ recommendation }: ExtensionProps) {
   const productPrice = i18n.formatCurrency(
     Number(recommendation.productVariant.price.amount),
   );
+
+  const { productOfferCompareAtPrice, productOfferPrice } = calculatePricing();
 
   return (
     <View
@@ -84,6 +91,28 @@ export function BundleProductOffer({ recommendation }: ExtensionProps) {
       console.error(result.message);
     }
     setAdding(false);
+  }
+
+  function calculatePricing() {
+    const productOfferCompareAtAmount = Number(
+      recommendation.productVariant.price.amount,
+    );
+
+    const asBundleCompareAtAmount =
+      firstLine.cost.totalAmount.amount / firstLine.quantity +
+      productOfferCompareAtAmount;
+
+    const asBundleSavingsAmount =
+      asBundleCompareAtAmount * (DEFAULT_PERCENTAGE_DECREASE / 100);
+
+    return {
+      productOfferPrice: i18n.formatCurrency(
+        productOfferCompareAtAmount - asBundleSavingsAmount,
+      ),
+      productOfferCompareAtPrice: i18n.formatCurrency(
+        productOfferCompareAtAmount,
+      ),
+    };
   }
 }
 
