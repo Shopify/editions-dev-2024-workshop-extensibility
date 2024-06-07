@@ -84,6 +84,12 @@ export function BundleProductOffer({
       type: "addCartLine",
       merchandiseId: recommendation.productVariant.id,
       quantity: 1,
+      attributes: [
+        {
+          key: "_bundle_with",
+          value: firstLine.id,
+        },
+      ],
     });
     if (result.type === "error") {
       console.error(result.message);
