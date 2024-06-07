@@ -13,7 +13,7 @@ import {
   SkeletonImage,
   SkeletonText,
 } from "@shopify/ui-extensions-react/checkout";
-import type { CartLine, CartLineChange } from "@shopify/ui-extensions/checkout";
+import type { CartLine } from "@shopify/ui-extensions/checkout";
 import type { ProductVariant } from "@shopify/hydrogen/storefront-api-types";
 
 interface ExtensionProps {
@@ -79,14 +79,12 @@ export function BundleProductOffer({
   );
 
   async function handleAddToCart() {
-    const lineChange: CartLineChange = {
+    setAdding(true);
+    const result = await applyCartLinesChange({
       type: "addCartLine",
       merchandiseId: recommendation.productVariant.id,
       quantity: 1,
-    };
-
-    setAdding(true);
-    const result = await applyCartLinesChange(lineChange);
+    });
     if (result.type === "error") {
       console.error(result.message);
     }
