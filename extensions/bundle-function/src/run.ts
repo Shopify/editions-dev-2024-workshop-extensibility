@@ -41,7 +41,9 @@ export function run(input: Input): FunctionRunResult {
 
   const lineToBundle1 = input.cart.lines.find((line) => line.bundleWith?.value);
   const lineToBundle2 = input.cart.lines.find(
-    (line) => line.id === lineToBundle1?.bundleWith,
+    (line) =>
+      line.merchandise.__typename === "ProductVariant" &&
+      line.merchandise.id === lineToBundle1?.bundleWith.value,
   );
 
   if (!lineToBundle1 || !lineToBundle2) {

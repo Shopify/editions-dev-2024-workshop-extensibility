@@ -86,7 +86,7 @@ export function BundleProductOffer({
       attributes: [
         {
           key: "_bundle_with",
-          value: firstLine.id,
+          value: firstLine.merchandise.id,
         },
       ],
     });
