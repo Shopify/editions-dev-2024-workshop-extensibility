@@ -1,25 +1,21 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "66e979a78212f954f67e0a205dc11ac4"
-name = "editions-dev"
-handle = "editions-dev"
-application_url = "https://democratic-purchase-chance-traveler.trycloudflare.com"
+name = "editions-dev-2024-workshop-extensibility"
+handle = "editions-dev-2024-workshop-extensibility"
+application_url = ""
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
-dev_store_url = "2022-11-14-dev-test.myshopify.com"
+dev_store_url = ""
 include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "unauthenticated_read_product_listings,write_cart_transforms,write_products,write_publications"
+scopes = "write_cart_transforms,write_products,write_publications"
 
 [auth]
 redirect_urls = [
-  "https://democratic-purchase-chance-traveler.trycloudflare.com/auth/callback",
-  "https://democratic-purchase-chance-traveler.trycloudflare.com/auth/shopify/callback",
-  "https://democratic-purchase-chance-traveler.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
