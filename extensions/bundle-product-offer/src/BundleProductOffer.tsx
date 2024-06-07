@@ -29,10 +29,6 @@ export function BundleProductOffer({ recommendation }: ExtensionProps) {
   const applyCartLinesChange = useApplyCartLinesChange();
   const { i18n } = useApi();
 
-  if (!recommendation) {
-    return null;
-  }
-
   const productPrice = i18n.formatCurrency(
     Number(recommendation.productVariant.price.amount),
   );
@@ -76,9 +72,6 @@ export function BundleProductOffer({ recommendation }: ExtensionProps) {
   );
 
   async function handleAddToCart() {
-    if (!recommendation) {
-      return null;
-    }
     const lineChange: CartLineChange = {
       type: "addCartLine",
       merchandiseId: recommendation.productVariant.id,
