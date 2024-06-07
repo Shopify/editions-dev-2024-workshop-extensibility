@@ -22,7 +22,7 @@ interface ExtensionProps {
   firstLine?: CartLine;
 }
 
-export function BundleProductOffer({ recommendation}: ExtensionProps) {
+export function BundleProductOffer({ recommendation }: ExtensionProps) {
   const [adding, setAdding] = useState(false);
   const applyCartLinesChange = useApplyCartLinesChange();
   const { i18n } = useApi();
@@ -44,13 +44,15 @@ export function BundleProductOffer({ recommendation}: ExtensionProps) {
       <BlockSpacer />
       <InlineLayout spacing="tight" columns={["fill", "20%"]}>
         <InlineStack>
+          {recommendation.productVariant.image &&
           <Image
             cornerRadius="base"
             accessibilityDescription={
-              recommendation.productVariant.image.altText
+              recommendation.productVariant.image.altText || ""
             }
             source={recommendation.productVariant.image.url}
           />
+          }
           <BlockLayout rows={["20%", 22]}>
             <BlockSpacer />
             <Text>
@@ -70,6 +72,7 @@ export function BundleProductOffer({ recommendation}: ExtensionProps) {
   );
 
   async function handleAddToCart() {
+    if (!recommendation) {return null};
     const lineChange: CartLineChange =
       {
         type: "addCartLine",
