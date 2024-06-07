@@ -1,7 +1,15 @@
-import { reactExtension, useCartLines } from "@shopify/ui-extensions-react/checkout";
+import {
+  reactExtension,
+  useCartLines,
+  useApi,
+} from "@shopify/ui-extensions-react/checkout";
 import type { Product } from "@shopify/hydrogen/storefront-api-types";
 
-import { BundleProductOffer } from "./BundleProductOffer";
+import { useEffect, useState } from "react";
+import {
+  BundleProductOffer,
+  BundleProductOfferSkeleton,
+} from "./BundleProductOffer";
 
 const productRecommendationsQuery = `#graphql
   query ProductRecommendations($productId: ID!) {
@@ -30,54 +38,70 @@ const productRecommendationsQuery = `#graphql
 
 export default reactExtension(
   "purchase.checkout.cart-line-list.render-after",
-  async (api) => {
-    // get first product ID to query for a product recommendation, skip if a bundle
-    const lines = useCartLines();
-    const firstLine = lines.find(
-      (line) => line,
-    );
+  () => <Extension />,
+);
 
-    const recommendation = await fetchFirstRecommendation(
-      firstLine?.merchandise.product.id,
-    );
+function Extension() {
+  const { query } = useApi();
+  const [loading, setLoading] = useState(false);
+  const [product, setProduct] = useState(null);
 
-    // We should consider rendering a skeleton while we wait for a response
+  // use the first cartline to query for a product recommendation
+  const lines = useCartLines();
+  const firstLine = lines.find((line) => line);
 
-    return (
-      <BundleProductOffer recommendation={recommendation}/>
-    );
+  useEffect(() => {
+    fetchProduct(firstLine?.merchandise.product.id);
+  }, []);
 
-    async function fetchFirstRecommendation(productId?: string) {
-      if (!productId) {
+  async function fetchProduct(productId?: string) {
+    if (!productId) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const results = await query<{ productRecommendations: Product[] }>(
+        productRecommendationsQuery,
+        {
+          variables: { productId },
+        },
+      );
+
+      if (!results.data || !results.data.productRecommendations.length) {
         return;
       }
 
-      try {
-        const results = await api.query<{ productRecommendations: Product[] }>(
-          productRecommendationsQuery,
-          {
-            variables: { productId },
-          },
+      if (results.errors) {
+        throw new Error(
+          results.errors.map((error) => error.message).join("; "),
         );
-
-        if (!results.data || !results.data.productRecommendations.length) {
-          return;
-        }
-
-        if (results.errors) {
-          console.error("recommendations error", results.errors);
-          return;
-        }
-
-        const [{ variants, title }] = results.data.productRecommendations;
-
-        return {
-          productTitle: title,
-          productVariant: variants.nodes[0],
-        };
-      } catch (error) {
-        console.error(error);
       }
+
+      const [{ variants, title }] = results.data.productRecommendations;
+
+      setProduct({
+        productTitle: title,
+        productVariant: variants.nodes[0],
+      });
+    } catch (error) {
+      console.error(
+        "Error querying storefront API for product recommendation: ",
+        error,
+      );
+    } finally {
+      setLoading(false);
     }
-  },
-);
+  }
+
+  if (loading) {
+    return <BundleProductOfferSkeleton />;
+  }
+
+  if (product) {
+    return <BundleProductOffer recommendation={product} />;
+  }
+
+  return null;
+}
