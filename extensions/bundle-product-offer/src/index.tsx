@@ -46,9 +46,9 @@ function Extension() {
   const [loading, setLoading] = useState(false);
   const [product, setProduct] = useState(null);
 
-  // use the first cartline to query for a product recommendation
+  // use the first cartline to query for a product recommendation, skip if a bundle
   const lines = useCartLines();
-  const firstLine = lines.find((line) => line);
+  const firstLine = lines.find((line) => line.lineComponents.length === 0);
 
   useEffect(() => {
     fetchProduct(firstLine?.merchandise.product.id);
@@ -100,7 +100,9 @@ function Extension() {
   }
 
   if (product) {
-    return <BundleProductOffer recommendation={product} />;
+    return (
+      <BundleProductOffer recommendation={product} firstLine={firstLine} />
+    );
   }
 
   return null;
