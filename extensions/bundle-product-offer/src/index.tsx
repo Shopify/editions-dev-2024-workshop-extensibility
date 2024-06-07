@@ -1,7 +1,26 @@
-import { reactExtension, useCartLines } from "@shopify/ui-extensions-react/checkout";
-import type { Product } from "@shopify/hydrogen/storefront-api-types";
+import {
+  reactExtension,
+  useCartLines,
+  useApi,
+  SkeletonText,
+  InlineLayout,
+  SkeletonImage,
+  BlockStack,
+  Divider,
+  Heading,
+  Button,
+  useApplyCartLinesChange,
+  Image,
+  Text,
+} from "@shopify/ui-extensions-react/checkout";
+import type {
+  CartLine,
+  Product,
+  ProductVariant,
+} from "@shopify/hydrogen/storefront-api-types";
 
-import { BundleProductOffer } from "./BundleProductOffer";
+import { useEffect, useState } from "react";
+import { CartLineChange } from "@shopify/ui-extensions/checkout";
 
 const productRecommendationsQuery = `#graphql
   query ProductRecommendations($productId: ID!) {
@@ -30,54 +49,176 @@ const productRecommendationsQuery = `#graphql
 
 export default reactExtension(
   "purchase.checkout.cart-line-list.render-after",
-  async (api) => {
-    // get first product ID to query for a product recommendation, skip if a bundle
-    const lines = useCartLines();
-    const firstLine = lines.find(
-      (line) => line,
-    );
+  () => <Extension />,
+);
 
-    const recommendation = await fetchFirstRecommendation(
-      firstLine?.merchandise.product.id,
-    );
+function Extension() {
+  const { query } = useApi();
+  const [loading, setLoading] = useState(false);
+  const [product, setProduct] = useState(null);
 
-    // We should consider rendering a skeleton while we wait for a response
+  // use the first cartline to query for a product recommendation
+  const lines = useCartLines();
+  const firstLine = lines.find((line) => line);
 
-    return (
-      <BundleProductOffer recommendation={recommendation}/>
-    );
+  useEffect(() => {
+    fetchProduct(firstLine?.merchandise.product.id);
+  }, []);
 
-    async function fetchFirstRecommendation(productId?: string) {
-      if (!productId) {
+  async function fetchProduct(productId?: string) {
+    setLoading(true);
+    if (!productId) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const results = await query<{ productRecommendations: Product[] }>(
+        productRecommendationsQuery,
+        {
+          variables: { productId },
+        },
+      );
+
+      if (!results.data || !results.data.productRecommendations.length) {
         return;
       }
 
-      try {
-        const results = await api.query<{ productRecommendations: Product[] }>(
-          productRecommendationsQuery,
-          {
-            variables: { productId },
-          },
+      if (results.errors) {
+        throw new Error(
+          results.errors.map((error) => error.message).join("; "),
         );
-
-        if (!results.data || !results.data.productRecommendations.length) {
-          return;
-        }
-
-        if (results.errors) {
-          console.error("recommendations error", results.errors);
-          return;
-        }
-
-        const [{ variants, title }] = results.data.productRecommendations;
-
-        return {
-          productTitle: title,
-          productVariant: variants.nodes[0],
-        };
-      } catch (error) {
-        console.error(error);
       }
+
+      const [{ variants, title }] = results.data.productRecommendations;
+
+      setProduct({
+        productTitle: title,
+        productVariant: variants.nodes[0],
+      });
+    } catch (error) {
+      console.error(
+        "Error querying storefront API for product recommendation: ",
+        error,
+      );
+    } finally {
+      setLoading(false);
     }
-  },
-);
+  }
+
+  if (loading) {
+    return <LoadingSkeleton />;
+  } else if (product) {
+    return <BundleProductOffer recommendation={product} />;
+  } else {
+    return null;
+  }
+}
+
+function LoadingSkeleton() {
+  return (
+    <BlockStack spacing="loose">
+      <Divider />
+      <Heading level={2}>You might also like</Heading>
+      <BlockStack spacing="loose">
+        <InlineLayout
+          spacing="base"
+          columns={[64, "fill", "auto"]}
+          blockAlignment="center"
+        >
+          <SkeletonImage aspectRatio={1} />
+          <BlockStack spacing="none">
+            <SkeletonText inlineSize="large" />
+            <SkeletonText inlineSize="small" />
+          </BlockStack>
+          <Button kind="secondary" disabled={true}>
+            Add
+          </Button>
+        </InlineLayout>
+      </BlockStack>
+    </BlockStack>
+  );
+}
+
+interface BundleProductOfferProps {
+  recommendation?: {
+    productTitle: string;
+    productVariant: ProductVariant;
+  };
+  firstLine?: CartLine;
+}
+
+function BundleProductOffer({ recommendation }: BundleProductOfferProps) {
+  const [adding, setAdding] = useState(false);
+  const applyCartLinesChange = useApplyCartLinesChange();
+  const { i18n } = useApi();
+
+  if (!recommendation) {
+    return null;
+  }
+
+  const productPrice = i18n.formatCurrency(
+    Number(recommendation.productVariant.price.amount),
+  );
+
+  return (
+    <BlockStack spacing="loose">
+      <Divider />
+      <Heading level={2}>You might also like</Heading>
+      <BlockStack spacing="loose">
+        <InlineLayout
+          spacing="base"
+          columns={[64, "fill", "auto"]}
+          blockAlignment="center"
+        >
+          {recommendation.productVariant.image && (
+            <Image
+              border="base"
+              borderWidth="base"
+              borderRadius="loose"
+              source={recommendation.productVariant.image.url}
+              accessibilityDescription={recommendation.productTitle}
+              aspectRatio={1}
+            />
+          )}
+
+          <BlockStack spacing="none">
+            <Text>
+              {recommendation.productVariant.title ||
+                recommendation.productTitle}
+            </Text>
+            <Text appearance="subdued">{productPrice}</Text>
+          </BlockStack>
+          <Button
+            kind="secondary"
+            loading={adding}
+            accessibilityLabel={`Add ${recommendation.productTitle} to cart`}
+            disabled={adding}
+            onPress={handleAddToCart}
+          >
+            Add
+          </Button>
+        </InlineLayout>
+      </BlockStack>
+    </BlockStack>
+  );
+
+  async function handleAddToCart() {
+    if (!recommendation) {
+      return null;
+    }
+    const lineChange: CartLineChange = {
+      type: "addCartLine",
+      merchandiseId: recommendation.productVariant.id,
+      quantity: 1,
+    };
+
+    setAdding(true);
+    const result = await applyCartLinesChange(lineChange);
+    if (result.type === "error") {
+      console.error(result.message);
+    }
+    setAdding(false);
+  }
+}
