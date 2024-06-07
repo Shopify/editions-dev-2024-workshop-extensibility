@@ -34,10 +34,6 @@ export function BundleProductOffer({
   const applyCartLinesChange = useApplyCartLinesChange();
   const { i18n } = useApi();
 
-  const productPrice = i18n.formatCurrency(
-    Number(recommendation.productVariant.price.amount),
-  );
-
   const { productOfferCompareAtPrice, productOfferPrice } = calculatePricing();
 
   return (
@@ -47,30 +43,33 @@ export function BundleProductOffer({
       cornerRadius="base"
       padding={["tight", "base", "base", "base"]}
     >
-      <Text emphasis="bold">Add to your cart</Text>
+      <Text emphasis="bold">Bundle up and save</Text>
       <BlockSpacer />
       <InlineLayout spacing="tight" columns={["fill", "20%"]}>
         <InlineStack>
-          {recommendation.productVariant.image && (
-            <Image
-              cornerRadius="base"
-              accessibilityDescription={
-                recommendation.productVariant.image.altText || ""
-              }
-              source={recommendation.productVariant.image.url}
-            />
-          )}
+          <Image
+            cornerRadius="base"
+            accessibilityDescription={
+              recommendation.productVariant.image.altText
+            }
+            source={recommendation.productVariant.image.url}
+          />
           <BlockLayout rows={["20%", 22]}>
             <BlockSpacer />
             <Text>
               {recommendation.productVariant.title ||
                 recommendation.productTitle}
             </Text>
-            <Text>{productPrice}</Text>
+            <InlineStack spacing="tight">
+              <Text accessibilityRole="deletion" appearance="subdued">
+                {productOfferCompareAtPrice}
+              </Text>
+              <Text>{productOfferPrice}</Text>
+            </InlineStack>
           </BlockLayout>
         </InlineStack>
         <View maxBlockSize={10} minInlineSize="25%" inlineAlignment="end">
-          <Button loading={adding} disabled={adding} onPress={handleAddToCart}>
+          <Button disabled={adding} onPress={handleAddToCart}>
             Add
           </Button>
         </View>
