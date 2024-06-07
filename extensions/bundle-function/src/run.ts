@@ -1,9 +1,6 @@
-import type { Input, FunctionRunResult } from "../generated/api";
-
 import type {
   Input as GeneratedInput,
   FunctionRunResult,
-  MergeOperation,
   CartTransform,
   CartLine,
 } from "../generated/api";
