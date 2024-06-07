@@ -51,10 +51,10 @@ function Extension() {
   const firstLine = lines.find((line) => line.lineComponents.length === 0);
 
   useEffect(() => {
-    fetchProduct(firstLine?.merchandise.product.id);
+    fetchProductRecommendation(firstLine?.merchandise.product.id);
   }, []);
 
-  async function fetchProduct(productId?: string) {
+  async function fetchProductRecommendation(productId?: string) {
     if (!productId) {
       return;
     }
