@@ -43,12 +43,12 @@ export default reactExtension(
 
 function Extension() {
   const { query } = useApi();
+  const lines = useCartLines();
   const [loading, setLoading] = useState(false);
   const [recommendedProduct, setRecommendedProduct] = useState(null);
 
   // use the first cartline to query for a product recommendation
-  const lines = useCartLines();
-  const firstLine = lines.find((line) => line);
+  const firstLine = lines[0];
 
   useEffect(() => {
     fetchProductRecommendation(firstLine?.merchandise.product.id);
