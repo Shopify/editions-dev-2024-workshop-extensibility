@@ -5,7 +5,6 @@ import type {
   CartLine,
 } from "../generated/api";
 
-// TODO: make these hard-coded defaults configurable via metafield
 const DEFAULT_PERCENTAGE_DECREASE = 15;
 
 const EMPTY_OPERATION = {
