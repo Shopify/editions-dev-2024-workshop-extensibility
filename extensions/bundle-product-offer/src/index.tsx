@@ -47,6 +47,11 @@ function Extension() {
   const [loading, setLoading] = useState(false);
   const [recommendedProduct, setRecommendedProduct] = useState(null);
 
+  // if we have bundles already, don't render the bundle offer
+  if (lines.some((line) => line.lineComponents.length > 0)) {
+    return;
+  }
+
   // use the first cartline to query for a product recommendation
   const firstLine = lines[0];
 
@@ -100,7 +105,12 @@ function Extension() {
   }
 
   if (recommendedProduct) {
-    return <BundleProductOffer recommendation={recommendedProduct} />;
+    return (
+      <BundleProductOffer
+        recommendation={recommendedProduct}
+        firstLine={firstLine}
+      />
+    );
   }
 
   return null;
